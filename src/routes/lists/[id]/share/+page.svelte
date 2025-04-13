@@ -1,51 +1,91 @@
 <script lang="ts">
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import type { PageData } from './$types';
+    import ItemForm from '$lib/components/items/ItemForm.svelte';
+    import ItemList from '$lib/components/items/ItemList.svelte';
 
     export let data: PageData;
 
     $: list = data.list;
     $: isCreator = data.isCreator;
-    $: items = list?.items || [];
+    $: items = data.list?.items || [];
 
-    let gifterName = '';
-    let showGifterInput = false;
-    let activeItemId = '';
-    let actionType = '';
-
-    function openGifterDialog(itemId: string, action: 'take' | 'gift-with-me') {
-        activeItemId = itemId;
-        actionType = action;
-        showGifterInput = true;
-    }
-
-    async function handleAction() {
-        if (!gifterName || !activeItemId) return;
-
-        try {
-            if (actionType === 'take') {
-                await markItemAsTaken(activeItemId, gifterName);
-            } else if (actionType === 'gift-with-me') {
-                await markItemAsGiftWithMe(activeItemId, gifterName);
-            }
-
-            gifterName = '';
-            showGifterInput = false;
-            activeItemId = '';
-        } catch (err) {
-            console.error('Failed to perform action:', err);
+    async function handleTakeItem(event: CustomEvent<string>) {
+        // You need to collect the gifter's name - this could be done with a modal or prompt
+        const gifterName = prompt('Please enter your name:');
+        if (gifterName) {
+            await markItemAsTaken(event.detail, gifterName);
         }
     }
 
-    async function markItemAsTaken(itemId: string, gifterName: string) {
+    async function handleGiftWithMe(event: CustomEvent<string>) {
+        // Similar to above
+        const gifterName = prompt('Please enter your name:');
+        if (gifterName) {
+            await markItemAsGiftWithMe(event.detail, gifterName);
+        }
+    }
+
+    let newItemName = '';
+    let newItemLink = '';
+    let newItemPrice = '';
+    let isAddingItem = false;
+    let error = '';
+
+    // async function addItem() {
+    //     if (!newItemName) return;
+    //
+    //     isAddingItem = true;
+    //     error = '';
+    //
+    //     try {
+    //         const price = newItemPrice ? parseFloat(newItemPrice) : null;
+    //
+    //         const response = await fetch(`/api/lists/${$page.params.id}/items`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({
+    //                 name: newItemName,
+    //                 link: newItemLink || null,
+    //                 price
+    //             })
+    //         });
+    //
+    //         if (!response.ok) {
+    //             const data = await response.json();
+    //             throw new Error(data.message || 'Failed to add item');
+    //         }
+    //
+    //         // Add the new item to the local items array
+    //         const newItem = await response.json();
+    //         items = [...items, newItem];
+    //
+    //         // Reset form
+    //         newItemName = '';
+    //         newItemLink = '';
+    //         newItemPrice = '';
+    //     } catch (err) {
+    //         if (err instanceof Error) {
+    //             error = err.message;
+    //         } else {
+    //             error = 'An unknown error occurred';
+    //         }
+    //     } finally {
+    //         isAddingItem = false;
+    //     }
+    // }
+
+    async function markItemAsTaken(itemId: string, username: string) {
         try {
-            const response = await fetch(`/api/lists/${$page.params.id}/items/${itemId}/take`, {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}/take`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    gifterName
+                    gifterName: username
                 })
             });
 
@@ -62,15 +102,15 @@
         }
     }
 
-    async function markItemAsGiftWithMe(itemId: string, gifterName: string) {
+    async function markItemAsGiftWithMe(itemId: string, username: string) {
         try {
-            const response = await fetch(`/api/lists/${$page.params.id}/items/${itemId}/gift-with-me`, {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}/gift-with-me`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    gifterName
+                    gifterName: username
                 })
             });
 
@@ -86,6 +126,11 @@
             console.error('Failed to mark as gift with me:', err);
         }
     }
+
+    function handleItemAdded(event: CustomEvent) {
+        const newItem = event.detail;
+        items = [...items, newItem];
+    }
 </script>
 
 <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
@@ -93,130 +138,55 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900">
             {list?.title || 'Wishlist'}
         </h3>
-        {#if list?.creator}
-            <p class="mt-1 text-sm text-gray-500">Created by {list.creator.name}</p>
-        {/if}
         {#if list?.description}
             <p class="mt-2 text-sm text-gray-500">{list.description}</p>
         {/if}
     </div>
 
-    <!-- Items list for gifters -->
-    {#if items.length === 0}
-        <div class="text-center py-6">
-            <p class="text-gray-500">This wishlist is empty.</p>
+    {#if isCreator}
+        <!-- Creator view -->
+        <div class="mt-6 space-y-6">
+            <!-- Add new item form -->
+            <ItemForm listId={page.params.id} on:itemAdded={handleItemAdded} />
         </div>
-    {:else}
         <div class="mt-6">
-            <h4 class="text-md font-medium text-gray-900 mb-4">Wishlist Items</h4>
-            <ul class="divide-y divide-gray-200">
-                {#each items as item}
-                    <li class="py-4">
-                        <div class="flex justify-between">
-                            <div>
-                                <h5 class="text-md font-medium text-gray-900 {item.isTaken ? 'line-through text-gray-500' : ''}">{item.name}</h5>
-                                {#if item.price}
-                                    <p class="text-sm text-gray-500">${item.price.toFixed(2)}</p>
-                                {/if}
-                                {#if item.link}
-                                    <a href={item.link} target="_blank" rel="noopener noreferrer"
-                                       class="text-sm text-indigo-600 hover:text-indigo-500">
-                                        View Product →
-                                    </a>
-                                {/if}
+            <!-- Items list -->
+            <ItemList {items} />
 
-                                {#if item.isTaken}
-                                    <div class="mt-1 text-sm text-green-600">
-                                        {#if item.gifterNames && item.gifterNames.length > 0}
-                                            <span>Taken by: {item.gifterNames.join(', ')}</span>
-                                        {:else}
-                                            <span>Taken</span>
-                                        {/if}
-                                    </div>
-                                {/if}
+            <!-- Share section -->
+            <div class="mt-6 bg-gray-50 p-4 rounded-lg">
+                <h4 class="text-md font-medium text-gray-900 mb-2">Share Your Wishlist</h4>
+                <p class="text-sm text-gray-500 mb-3">Share this link with friends and family. They'll be able to see
+                    your wishlist and mark items as taken.</p>
 
-                                {#if item.giftWithMe}
-                                    <div class="mt-1 text-sm text-blue-600">
-                                        {#if item.gifterNames && item.gifterNames.length > 0}
-                                            <span>Gift with: {item.gifterNames.join(', ')}</span>
-                                        {:else}
-                                            <span>Multiple people gifting</span>
-                                        {/if}
-                                    </div>
-                                {/if}
-                            </div>
-
-                            {#if !item.isTaken}
-                                <div class="flex space-x-2">
-                                    <button
-                                        on:click={() => openGifterDialog(item.id, 'take')}
-                                        class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm hover:bg-green-200"
-                                    >
-                                        I'll Get This
-                                    </button>
-
-                                    <button
-                                        on:click={() => openGifterDialog(item.id, 'gift-with-me')}
-                                        class="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200"
-                                    >
-                                        Gift With Me
-                                    </button>
-                                </div>
-                            {/if}
-                        </div>
-                    </li>
-                {/each}
-            </ul>
-        </div>
-    {/if}
-
-    <!-- Gifter name modal -->
-    {#if showGifterInput}
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
-                    {actionType === 'take' ? 'Mark as Taking This Gift' : 'Gift With Others'}
-                </h3>
-
-                <p class="text-sm text-gray-500 mb-4">
-                    {actionType === 'take'
-                        ? 'Your name will be visible to others, but not to the wishlist creator.'
-                        : 'Add your name to show you want to contribute to this gift.'}
-                </p>
-
-                <div class="mb-4">
-                    <label for="gifterName" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                <div class="flex">
                     <input
                         type="text"
-                        id="gifterName"
-                        bind:value={gifterName}
-                        class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Enter your name"
+                        readonly
+                        value={`${window.location.origin}/lists/${page.params.id}/share`}
+                        class="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm py-2 px-3 bg-gray-50 text-gray-500 focus:outline-none sm:text-sm"
                     />
-                </div>
-
-                <div class="flex justify-end space-x-3">
                     <button
                         type="button"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         on:click={() => {
-              showGifterInput = false;
-              gifterName = '';
+              navigator.clipboard.writeText(`${window.location.origin}/lists/${page.params.id}/share`);
             }}
-                        class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="button"
-                        on:click={handleAction}
-                        disabled={!gifterName}
-                        class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                    >
-                        Confirm
+                        Copy
                     </button>
                 </div>
             </div>
+        </div>
+    {:else}
+        <!-- Viewing someone else's list (gifter view) - this should never be accessed directly,
+             but we'll include it here for safety. Users should go to the /share route instead. -->
+        <div class="text-center py-12">
+            <p class="text-gray-500">You don't have permission to view this page directly.</p>
+            <a href={`/lists/${page.params.id}/share`}
+               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                View Shared Wishlist
+            </a>
         </div>
     {/if}
 </div>

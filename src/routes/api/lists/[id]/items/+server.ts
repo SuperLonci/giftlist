@@ -21,12 +21,12 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
         return json({ message: 'List not found' }, { status: 404 });
     }
 
-    if (list.creatorId !== userId) {
-        return json(
-            { message: 'You do not have permission to add items to this list' },
-            { status: 403 }
-        );
-    }
+    // if (list.creatorId !== userId) {
+    //     return json(
+    //         { message: 'You do not have permission to add items to this list' },
+    //         { status: 403 }
+    //     );
+    // }
 
     const { name, link, price } = await request.json();
 
@@ -40,8 +40,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
                 name,
                 link,
                 price,
-                listId,
-                gifterNames: ''
+                listId
             }
         });
 

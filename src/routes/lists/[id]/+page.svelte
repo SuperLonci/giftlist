@@ -1,67 +1,63 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-    import type { PageData } from './$types';
+    import { page } from '$app/state'; // Fixed to '$app/stores'
+    import ItemForm from '$lib/components/items/ItemForm.svelte';
+    import ItemList from '$lib/components/items/ItemList.svelte';
+    import GifterNameModal from '$lib/components/modals/GifterNameModal.svelte';
+    import type { Item, List } from '@prisma/client';
 
-    export let data: PageData;
-
+    export let data: {
+        list: List & {
+            items: (Item & {
+                gifters: {
+                    name: string;
+                    id: string;
+                    itemId: string
+                }[]
+            })[]
+        }; isCreator: boolean
+    };
     $: list = data.list;
     $: isCreator = data.isCreator;
     $: items = data.list?.items || [];
 
-    let newItemName = '';
-    let newItemLink = '';
-    let newItemPrice = '';
-    let isAddingItem = false;
-    let error = '';
+    // Modal state management
+    let showModal = false;
+    let currentItemId = '';
+    let currentActionType: 'take' | 'gift-with-me' = 'take';
 
-    async function addItem() {
-        if (!newItemName) return;
+    function handleTakeItem(event: CustomEvent<string>) {
+        currentItemId = event.detail;
+        currentActionType = 'take';
+        showModal = true;
+    }
 
-        isAddingItem = true;
-        error = '';
+    function handleGiftWithMe(event: CustomEvent<string>) {
+        currentItemId = event.detail;
+        currentActionType = 'gift-with-me';
+        showModal = true;
+    }
 
-        try {
-            const price = newItemPrice ? parseFloat(newItemPrice) : null;
+    function handleModalClose() {
+        showModal = false;
+        currentItemId = '';
+    }
 
-            const response = await fetch(`/api/lists/${$page.params.id}/items`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: newItemName,
-                    link: newItemLink || null,
-                    price
-                })
-            });
+    function handleModalConfirm(event: CustomEvent<{ gifterName: string, actionType: 'take' | 'gift-with-me' }>) {
+        const { gifterName, actionType } = event.detail;
 
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to add item');
-            }
-
-            // Add the new item to the local items array
-            const newItem = await response.json();
-            items = [...items, newItem];
-
-            // Reset form
-            newItemName = '';
-            newItemLink = '';
-            newItemPrice = '';
-        } catch (err) {
-            if (err instanceof Error) {
-                error = err.message;
-            } else {
-                error = 'An unknown error occurred';
-            }
-        } finally {
-            isAddingItem = false;
+        if (actionType === 'take') {
+            markItemAsTaken(currentItemId, gifterName);
+        } else {
+            markItemAsGiftWithMe(currentItemId, gifterName);
         }
+
+        showModal = false;
+        currentItemId = '';
     }
 
     async function markItemAsTaken(itemId: string, username: string) {
         try {
-            const response = await fetch(`/api/lists/${$page.params.id}/items/${itemId}/take`, {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}/take`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -86,7 +82,7 @@
 
     async function markItemAsGiftWithMe(itemId: string, username: string) {
         try {
-            const response = await fetch(`/api/lists/${$page.params.id}/items/${itemId}/gift-with-me`, {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}/gift-with-me`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -109,7 +105,10 @@
         }
     }
 
-    let gifterName = '';
+    function handleItemAdded(event: CustomEvent) {
+        const newItem = event.detail;
+        items = [...items, newItem];
+    }
 </script>
 
 <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
@@ -126,91 +125,11 @@
         <!-- Creator view -->
         <div class="mt-6 space-y-6">
             <!-- Add new item form -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="text-md font-medium text-gray-900 mb-4">Add New Item</h4>
-
-                {#if error}
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
-                    </div>
-                {/if}
-
-                <form on:submit|preventDefault={addItem} class="space-y-4">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Item Name *</label>
-                        <input
-                            type="text"
-                            id="name"
-                            bind:value={newItemName}
-                            required
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label for="link" class="block text-sm font-medium text-gray-700">Link (optional)</label>
-                        <input
-                            type="url"
-                            id="link"
-                            bind:value={newItemLink}
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label for="price" class="block text-sm font-medium text-gray-700">Price (optional)</label>
-                        <input
-                            type="number"
-                            id="price"
-                            bind:value={newItemPrice}
-                            step="0.01"
-                            min="0"
-                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={isAddingItem || !newItemName}
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                        >
-                            {isAddingItem ? 'Adding...' : 'Add Item'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
+            <ItemForm listId={page.params.id} on:itemAdded={handleItemAdded} />
+        </div>
+        <div class="mt-6">
             <!-- Items list -->
-            {#if items.length === 0}
-                <div class="text-center py-6">
-                    <p class="text-gray-500">Your wishlist is empty. Add some items above!</p>
-                </div>
-            {:else}
-                <div class="mt-6">
-                    <h4 class="text-md font-medium text-gray-900 mb-4">Your Wishlist Items</h4>
-                    <ul class="divide-y divide-gray-200">
-                        {#each items as item}
-                            <li class="py-4">
-                                <div class="flex justify-between">
-                                    <div>
-                                        <h5 class="text-md font-medium text-gray-900">{item.name}</h5>
-                                        {#if item.price}
-                                            <p class="text-sm text-gray-500">${item.price.toFixed(2)}</p>
-                                        {/if}
-                                        {#if item.link}
-                                            <a href={item.link} target="_blank" rel="noopener noreferrer"
-                                               class="text-sm text-indigo-600 hover:text-indigo-500">
-                                                View Product →
-                                            </a>
-                                        {/if}
-                                    </div>
-                                </div>
-                            </li>
-                        {/each}
-                    </ul>
-                </div>
-            {/if}
+            <ItemList {items} isCreatorView={true} />
 
             <!-- Share section -->
             <div class="mt-6 bg-gray-50 p-4 rounded-lg">
@@ -222,15 +141,15 @@
                     <input
                         type="text"
                         readonly
-                        value={`${window.location.origin}/lists/${$page.params.id}/share`}
+                        value={`${window.location.origin}/lists/${page.params.id}/share`}
                         class="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm py-2 px-3 bg-gray-50 text-gray-500 focus:outline-none sm:text-sm"
                     />
                     <button
                         type="button"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         on:click={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/lists/${$page.params.id}/share`);
-            }}
+                            navigator.clipboard.writeText(`${window.location.origin}/lists/${page.params.id}/share`);
+                        }}
                     >
                         Copy
                     </button>
@@ -238,14 +157,16 @@
             </div>
         </div>
     {:else}
-        <!-- Viewing someone else's list (gifter view) - this should never be accessed directly,
-             but we'll include it here for safety. Users should go to the /share route instead. -->
-        <div class="text-center py-12">
-            <p class="text-gray-500">You don't have permission to view this page directly.</p>
-            <a href={`/lists/${$page.params.id}/share`}
-               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                View Shared Wishlist
-            </a>
+        <div class="mt-6">
+            <ItemList {items} isCreatorView={false} on:takeItem={handleTakeItem} on:giftWithMe={handleGiftWithMe} />
         </div>
     {/if}
+
+    <!-- Modal for entering gifter name - shown for both take and gift-with-me actions -->
+    <GifterNameModal
+        show={showModal}
+        actionType={currentActionType}
+        on:close={handleModalClose}
+        on:confirm={handleModalConfirm}
+    />
 </div>

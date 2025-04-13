@@ -1,9 +1,13 @@
 <script lang="ts">
-    import type { PageData } from './$types';
+    import ListGrid from '$lib/components/lists/ListGrid.svelte';
+    import type { Item, List } from '@prisma/client';
 
-    export let data: PageData;
+    export let data: { lists: (List & { items: Item[] })[] };
 
-    $: lists = data.lists || [];
+    $: lists = (data.lists || []).map((list) => ({
+        ...list,
+        items: list.items || []
+    }));
 </script>
 
 <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
@@ -19,30 +23,7 @@
         </div>
     </div>
 
-    {#if lists.length === 0}
-        <div class="text-center py-12">
-            <p class="text-gray-500">You haven't created any wishlists yet.</p>
-        </div>
-    {:else}
-        <div class="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {#each lists as list}
-                <div class="bg-white overflow-hidden shadow rounded-lg">
-                    <div class="p-5">
-                        <h4 class="text-lg font-semibold">{list.title}</h4>
-                        <p class="text-sm text-gray-500">{list.description || 'No description'}</p>
-                        <p class="text-sm text-gray-500 mt-2">{list.items.length} items</p>
-                    </div>
-                    <div class="bg-gray-50 px-5 py-3 flex justify-between">
-                        <a href="/lists/{list.id}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                            View List
-                        </a>
-                        <a href="/lists/{list.id}/share"
-                           class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                            Share
-                        </a>
-                    </div>
-                </div>
-            {/each}
-        </div>
-    {/if}
+    <div class="mt-6">
+        <ListGrid {lists} />
+    </div>
 </div>

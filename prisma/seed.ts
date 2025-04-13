@@ -3,6 +3,7 @@ import prisma from '../src/lib/server/prisma';
 async function clearDatabase() {
     console.log('🌱 Clearing existing data...');
     await prisma.$transaction([
+        prisma.gifter.deleteMany(),
         prisma.item.deleteMany(),
         prisma.list.deleteMany(),
         prisma.user.deleteMany()
@@ -37,13 +38,11 @@ async function seed() {
                 create: [
                     {
                         name: 'Milch',
-                        price: 1.5,
-                        gifterNames: ''
+                        price: 1.5
                     },
                     {
                         name: 'Brot',
-                        price: 2.0,
-                        gifterNames: ''
+                        price: 2.0
                     }
                 ]
             }
@@ -59,8 +58,7 @@ async function seed() {
                 create: [
                     {
                         name: 'Buch',
-                        price: 15.0,
-                        gifterNames: ''
+                        price: 15.0
                     }
                 ]
             }

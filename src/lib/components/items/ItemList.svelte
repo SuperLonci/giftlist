@@ -8,14 +8,32 @@
 
     const dispatch = createEventDispatcher();
 
+    // Track the most recently modified item
+    let lastModifiedItemId: string | null = null;
+
     function handleTakeItem(event: CustomEvent<string>) {
         const itemId = event.detail;
+        // Clear undo state for any previous item
+        lastModifiedItemId = null;
         dispatch('takeItem', itemId);
     }
 
     function handleGiftWithMe(event: CustomEvent<string>) {
         const itemId = event.detail;
+        // Clear undo state for any previous item
+        lastModifiedItemId = null;
         dispatch('giftWithMe', itemId);
+    }
+
+    function handleUndoAction(event: CustomEvent<string>) {
+        const itemId = event.detail;
+        lastModifiedItemId = null;
+        dispatch('undoAction', itemId);
+    }
+
+    // This function should be called after the item state is successfully updated
+    export function setLastModifiedItem(itemId: string) {
+        lastModifiedItemId = itemId;
     }
 </script>
 
@@ -32,8 +50,10 @@
                 <ItemCard
                     {item}
                     {isCreatorView}
+                    showUndoButton={lastModifiedItemId === item.id}
                     on:takeItem={handleTakeItem}
                     on:giftWithMe={handleGiftWithMe}
+                    on:undoAction={handleUndoAction}
                 />
             {/each}
         </div>

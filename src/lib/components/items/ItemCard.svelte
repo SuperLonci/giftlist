@@ -5,6 +5,7 @@
 
     export let item: Item & { gifters: Gifter[] };
     export let isCreatorView = false;
+    export let showUndoButton = false;
 
     const dispatch = createEventDispatcher();
     let showTakeOverWarning = false;
@@ -28,6 +29,10 @@
 
     function handleGiftWithMe() {
         dispatch('giftWithMe', item.id);
+    }
+
+    function handleUndo() {
+        dispatch('undoAction', item.id);
     }
 </script>
 
@@ -68,23 +73,39 @@
             {/if}
         </div>
 
-        {#if !isCreatorView && item.itemStatus !== 'TAKEN'}
-            <div class="flex space-x-2">
+        <div class="flex items-center space-x-2">
+            {#if showUndoButton}
                 <button
-                    on:click={handleTakeItem}
-                    class="px-3 py-1 bg-green-100 text-green-800 rounded-md text-sm hover:bg-green-200"
+                    on:click={handleUndo}
+                    class="px-2 py-2 bg-gray-100 text-gray-800 rounded-md text-sm hover:bg-gray-200 flex items-center justify-center"
                 >
-                    I'll Get This
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    Undo
                 </button>
+            {/if}
 
-                <button
-                    on:click={handleGiftWithMe}
-                    class="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200"
-                >
-                    Gift Together
-                </button>
-            </div>
-        {/if}
+            {#if !isCreatorView && item.itemStatus !== 'TAKEN'}
+                <div class="flex space-x-2">
+                    <button
+                        on:click={handleTakeItem}
+                        class="px-3 py-5 bg-green-100 text-green-800 rounded-md text-sm hover:bg-green-200"
+                    >
+                        I'll Get This
+                    </button>
+
+                    <button
+                        on:click={handleGiftWithMe}
+                        class="px-3 py-5 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200"
+                    >
+                        Gift Together
+                    </button>
+                </div>
+            {/if}
+        </div>
     </div>
 </div>
 

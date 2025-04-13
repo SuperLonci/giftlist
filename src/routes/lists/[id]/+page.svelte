@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/state'; // Fixed to '$app/stores'
+    import { page } from '$app/state';
     import ItemForm from '$lib/components/items/ItemForm.svelte';
     import ItemList from '$lib/components/items/ItemList.svelte';
     import GifterNameModal from '$lib/components/modals/GifterNameModal.svelte';
@@ -25,6 +25,16 @@
     let currentItemId = '';
     let currentActionType: 'take' | 'gift-with-me' = 'take';
 
+    // Reference to the ItemList component
+    let itemListComponent: ItemList;
+
+    // Store the previous state of an item for undo functionality
+    let previousItemState: {
+        id: string,
+        status: string,
+        gifters: { name: string, id: string, itemId: string }[]
+    } | null = null;
+
     function handleTakeItem(event: CustomEvent<string>) {
         currentItemId = event.detail;
         currentActionType = 'take';
@@ -37,6 +47,11 @@
         showModal = true;
     }
 
+    function handleUndoAction(event: CustomEvent<string>) {
+        const itemId = event.detail;
+        undoItemAction(itemId);
+    }
+
     function handleModalClose() {
         showModal = false;
         currentItemId = '';
@@ -44,6 +59,16 @@
 
     function handleModalConfirm(event: CustomEvent<{ gifterName: string, actionType: 'take' | 'gift-with-me' }>) {
         const { gifterName, actionType } = event.detail;
+
+        // Save the current state of the item before modifying it
+        const item = items.find(i => i.id === currentItemId);
+        if (item) {
+            previousItemState = {
+                id: item.id,
+                status: item.itemStatus,
+                gifters: [...item.gifters]
+            };
+        }
 
         if (actionType === 'take') {
             markItemAsTaken(currentItemId, gifterName);
@@ -75,6 +100,11 @@
             // Update local state
             const updatedItem = await response.json();
             items = items.map(item => item.id === itemId ? updatedItem : item);
+
+            // Set this item as the last modified item to show undo button
+            if (itemListComponent) {
+                itemListComponent.setLastModifiedItem(itemId);
+            }
         } catch (err) {
             console.error('Failed to mark item as taken:', err);
         }
@@ -100,8 +130,50 @@
             // Update local state
             const updatedItem = await response.json();
             items = items.map(item => item.id === itemId ? updatedItem : item);
+
+            // Set this item as the last modified item to show undo button
+            if (itemListComponent) {
+                itemListComponent.setLastModifiedItem(itemId);
+            }
         } catch (err) {
             console.error('Failed to mark as gift with me:', err);
+        }
+    }
+
+    async function undoItemAction(itemId: string) {
+        if (!previousItemState || previousItemState.id !== itemId) {
+            console.error('No previous state available for undo');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}/undo`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    previousStatus: previousItemState.status,
+                    previousGifters: previousItemState.gifters
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to undo action');
+            }
+
+            // Update local state
+            const updatedItem = await response.json();
+            items = items.map(item => item.id === itemId ? updatedItem : item);
+
+            // Clear the last modified item and previous state
+            if (itemListComponent) {
+                itemListComponent.setLastModifiedItem('');
+            }
+            previousItemState = null;
+        } catch (err) {
+            console.error('Failed to undo action:', err);
         }
     }
 
@@ -129,7 +201,7 @@
         </div>
         <div class="mt-6">
             <!-- Items list -->
-            <ItemList {items} isCreatorView={true} />
+            <ItemList {items} isCreatorView={true} bind:this={itemListComponent} />
 
             <!-- Share section -->
             <div class="mt-6 bg-gray-50 p-4 rounded-lg">
@@ -158,7 +230,14 @@
         </div>
     {:else}
         <div class="mt-6">
-            <ItemList {items} isCreatorView={false} on:takeItem={handleTakeItem} on:giftWithMe={handleGiftWithMe} />
+            <ItemList
+                {items}
+                isCreatorView={false}
+                on:takeItem={handleTakeItem}
+                on:giftWithMe={handleGiftWithMe}
+                on:undoAction={handleUndoAction}
+                bind:this={itemListComponent}
+            />
         </div>
     {/if}
 

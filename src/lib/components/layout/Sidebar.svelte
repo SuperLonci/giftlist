@@ -10,7 +10,7 @@
 </script>
 
 <aside
-    class="w-64 md:shadow transform -translate-x-full md:translate-x-0 transition-transform duration-150 ease-in bg-white md:bg-gray-100">
+    class="w-56 md:shadow transform -translate-x-full md:translate-x-0 transition-transform duration-150 ease-in bg-white md:bg-gray-100">
     <div class="p-4 bg-white md:bg-transparent">
         <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Access</h2>
 

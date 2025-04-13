@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { Item, Gifter } from '@prisma/client';
+    import TakeOverWarningModal from '$lib/components/modals/TakeOverWarningModal.svelte';
 
     export let item: Item & { gifters: Gifter[] };
     export let isCreatorView = false;
@@ -87,29 +88,9 @@
     </div>
 </div>
 
-{#if showTakeOverWarning}
-    <div class="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
-        <p class="text-sm text-yellow-800">Are you sure you want to take over this item? This will remove all current
-            gifters from the "Gift Together" list.</p>
-        <div class="flex space-x-2 mt-2">
-            <button
-                on:click={() => confirmTakeOver('cancel')}
-                class="px-3 py-1 bg-gray-100 text-gray-800 rounded-md text-sm hover:bg-gray-200"
-            >
-                Cancel
-            </button>
-            <button
-                on:click={() => confirmTakeOver('giftTogether')}
-                class="px-3 py-1 bg-blue-100 text-blue-800 rounded-md text-sm hover:bg-blue-200"
-            >
-                Gift Together Instead
-            </button>
-            <button
-                on:click={() => confirmTakeOver('takeOver')}
-                class="px-3 py-1 bg-red-100 text-red-800 rounded-md text-sm hover:bg-red-200"
-            >
-                Take Over Anyway
-            </button>
-        </div>
-    </div>
-{/if}
+<TakeOverWarningModal
+    show={showTakeOverWarning}
+    on:cancel={() => confirmTakeOver('cancel')}
+    on:giftTogether={() => confirmTakeOver('giftTogether')}
+    on:takeOver={() => confirmTakeOver('takeOver')}
+/>

@@ -4,7 +4,7 @@
     import TakeOverWarningModal from '$lib/components/modals/TakeOverWarningModal.svelte';
 
     export let item: Item & { gifters: Gifter[] };
-    export let isCreatorView = false;
+    export let isCreatorView;
     export let showUndoButton = false;
 
     const dispatch = createEventDispatcher();
@@ -52,24 +52,26 @@
                 </a>
             {/if}
 
-            {#if item.itemStatus === 'TAKEN'}
-                <div class="mt-1 text-sm text-green-600">
-                    {#if item.gifters && item.gifters.length > 0}
-                        <span>Taken by: {item.gifters.map(gifter => gifter.name).join(', ')}</span>
-                    {:else}
-                        <span>Taken</span>
-                    {/if}
-                </div>
-            {/if}
+            {#if !isCreatorView }
+                {#if item.itemStatus === 'TAKEN'}
+                    <div class="mt-1 text-sm text-green-600">
+                        {#if item.gifters && item.gifters.length > 0}
+                            <span>Taken by: {item.gifters.map(gifter => gifter.name).join(', ')}</span>
+                        {:else}
+                            <span>Taken</span>
+                        {/if}
+                    </div>
+                {/if}
 
-            {#if item.itemStatus === 'GIFT_WITH_ME'}
-                <div class="mt-1 text-sm text-blue-600">
-                    {#if item.gifters && item.gifters.length > 0}
-                        <span>Gift with: {item.gifters.map(gifter => gifter.name).join(', ')}</span>
-                    {:else}
-                        <span>Multiple people gifting</span>
-                    {/if}
-                </div>
+                {#if item.itemStatus === 'GIFT_WITH_ME'}
+                    <div class="mt-1 text-sm text-blue-600">
+                        {#if item.gifters && item.gifters.length > 0}
+                            <span>Gift with: {item.gifters.map(gifter => gifter.name).join(', ')}</span>
+                        {:else}
+                            <span>Multiple people gifting</span>
+                        {/if}
+                    </div>
+                {/if}
             {/if}
         </div>
 

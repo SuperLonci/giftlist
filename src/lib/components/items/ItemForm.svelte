@@ -57,8 +57,6 @@
 </script>
 
 <div class="bg-gray-50 p-4 rounded-lg">
-    <h4 class="text-md font-medium text-gray-900 mb-4">Add New Item</h4>
-
     {#if error}
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}

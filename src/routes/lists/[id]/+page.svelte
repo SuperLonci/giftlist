@@ -3,7 +3,9 @@
     import ItemForm from '$lib/components/items/ItemForm.svelte';
     import ItemList from '$lib/components/items/ItemList.svelte';
     import GifterNameModal from '$lib/components/modals/GifterNameModal.svelte';
+    import AddItemModal from '$lib/components/modals/AddItemModal.svelte';
     import type { Item, List } from '@prisma/client';
+    import { creatorMode } from '$lib/stores/creatorMode';
 
     export let data: {
         list: List & {
@@ -21,9 +23,10 @@
     $: items = data.list?.items || [];
 
     // Modal state management
-    let showModal = false;
+    let showNameModal = false;
     let currentItemId = '';
     let currentActionType: 'take' | 'gift-with-me' = 'take';
+    let showAddItemModal = false;
 
     // Reference to the ItemList component
     let itemListComponent: ItemList;
@@ -38,13 +41,13 @@
     function handleTakeItem(event: CustomEvent<string>) {
         currentItemId = event.detail;
         currentActionType = 'take';
-        showModal = true;
+        showNameModal = true;
     }
 
     function handleGiftWithMe(event: CustomEvent<string>) {
         currentItemId = event.detail;
         currentActionType = 'gift-with-me';
-        showModal = true;
+        showNameModal = true;
     }
 
     function handleUndoAction(event: CustomEvent<string>) {
@@ -53,7 +56,7 @@
     }
 
     function handleModalClose() {
-        showModal = false;
+        showNameModal = false;
         currentItemId = '';
     }
 
@@ -76,7 +79,7 @@
             markItemAsGiftWithMe(currentItemId, gifterName);
         }
 
-        showModal = false;
+        showNameModal = false;
         currentItemId = '';
     }
 
@@ -177,28 +180,51 @@
         }
     }
 
-    function handleItemAdded(event: CustomEvent) {
+    function handleAddItem(event: CustomEvent) {
         const newItem = event.detail;
         items = [...items, newItem];
+        showAddItemModal = false;
+    }
+
+    let shareLink = '';
+    if (typeof window !== 'undefined') {
+        shareLink = `${window.location.origin}/lists/${page.params.id}/share`;
     }
 </script>
 
 <div class="bg-white shadow overflow-hidden sm:rounded-lg p-6">
-    <div class="pb-5 border-b border-gray-200">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">
-            {list?.title || 'Wishlist'}
-        </h3>
-        {#if list?.description}
-            <p class="mt-2 text-sm text-gray-500">{list.description}</p>
+    <div class="pb-5 border-b border-gray-200 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    {list?.title || 'Wishlist'}
+                </h3>
+                {#if list?.description}
+                    <p class="mt-2 text-sm text-gray-500">{list.description}</p>
+                {/if}
+            </div>
+            {#if $creatorMode}
+            <span
+                class="flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Creator
+            </span>
+            {/if}
+        </div>
+        {#if $creatorMode}
+            <!-- Add-Button -->
+            <div class="flex items-center space-x-4">
+                <button
+                    on:click={() => (showAddItemModal = true)}
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                    Add New Item
+                </button>
+            </div>
         {/if}
     </div>
 
-    {#if isCreator}
+    {#if $creatorMode}
         <!-- Creator view -->
-        <div class="mt-6 space-y-6">
-            <!-- Add new item form -->
-            <ItemForm listId={page.params.id} on:itemAdded={handleItemAdded} />
-        </div>
         <div class="mt-6">
             <!-- Items list -->
             <ItemList {items} isCreatorView={true} bind:this={itemListComponent} />
@@ -213,15 +239,17 @@
                     <input
                         type="text"
                         readonly
-                        value={`${window.location.origin}/lists/${page.params.id}/share`}
+                        value={shareLink}
                         class="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm py-2 px-3 bg-gray-50 text-gray-500 focus:outline-none sm:text-sm"
                     />
                     <button
                         type="button"
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         on:click={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}/lists/${page.params.id}/share`);
-                        }}
+                            if (typeof window !== 'undefined') {
+                                navigator.clipboard.writeText(shareLink);
+                            }}
+                            }
                     >
                         Copy
                     </button>
@@ -232,7 +260,7 @@
         <div class="mt-6">
             <ItemList
                 {items}
-                isCreatorView={false}
+                isCreatorView={$creatorMode}
                 on:takeItem={handleTakeItem}
                 on:giftWithMe={handleGiftWithMe}
                 on:undoAction={handleUndoAction}
@@ -243,9 +271,16 @@
 
     <!-- Modal for entering gifter name - shown for both take and gift-with-me actions -->
     <GifterNameModal
-        show={showModal}
+        show={showNameModal}
         actionType={currentActionType}
         on:close={handleModalClose}
         on:confirm={handleModalConfirm}
+    />
+
+    <AddItemModal
+        show={showAddItemModal}
+        listId={page.params.id}
+        on:close={() => (showAddItemModal = false)}
+        on:itemAdded={handleAddItem}
     />
 </div>

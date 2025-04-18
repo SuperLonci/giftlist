@@ -2,6 +2,7 @@
     import { createEventDispatcher } from 'svelte';
     import type { Item, Gifter } from '@prisma/client';
     import TakeOverWarningModal from '$lib/components/modals/TakeOverWarningModal.svelte';
+    import ItemModal from '$lib/components/modals/ItemModal.svelte';
 
     export let item: Item & { gifters: Gifter[] };
     export let isCreatorView;
@@ -9,6 +10,7 @@
 
     const dispatch = createEventDispatcher();
     let showTakeOverWarning = false;
+    let showItemModal = false;
 
     function handleTakeItem() {
         if (item.itemStatus !== 'AVAILABLE') {
@@ -34,9 +36,19 @@
     function handleUndo() {
         dispatch('undoAction', item.id);
     }
+
+    function handleEdit() {
+        showItemModal = true;
+    }
+
+    function handleItemSaved(event: CustomEvent) {
+        const updatedItem = event.detail;
+        dispatch('itemUpdated', updatedItem);
+        showItemModal = false;
+    }
 </script>
 
-<div class="bg-white p-4 rounded-lg shadow mb-4">
+<div class="bg-white p-4 rounded-lg shadow mb-4 relative group">
     <div class="flex justify-between">
         <div>
             <h5 class="text-md font-medium text-gray-900 {item.itemStatus === 'TAKEN' && !isCreatorView ? 'line-through text-gray-500' : ''}">
@@ -90,6 +102,20 @@
                 </button>
             {/if}
 
+            {#if isCreatorView}
+                <button
+                    on:click={handleEdit}
+                    aria-label="Edit item"
+                    class="absolute right-2 bg-gray-100 text-gray-800 rounded-full p-2 hover:bg-gray-200 group-hover:block hidden"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+            {/if}
+
             {#if !isCreatorView && item.itemStatus !== 'TAKEN'}
                 <div class="flex space-x-2">
                     <button
@@ -116,4 +142,13 @@
     on:cancel={() => confirmTakeOver('cancel')}
     on:giftTogether={() => confirmTakeOver('giftTogether')}
     on:takeOver={() => confirmTakeOver('takeOver')}
+/>
+
+<ItemModal
+    show={showItemModal}
+    mode="edit"
+    listId={item.listId}
+    {item}
+    on:close={() => (showItemModal = false)}
+    on:itemSaved={handleItemSaved}
 />

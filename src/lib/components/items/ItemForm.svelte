@@ -1,17 +1,20 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
+    import type { Item } from '@prisma/client';
 
     export let listId: string;
+    export let mode: 'add' | 'edit' = 'add';
+    export let item: Item | null = null;
 
-    let name = '';
-    let link = '';
-    let price = '';
+    let name = item ? item.name : '';
+    let link = item ? item.link || '' : '';
+    let price = item ? (item.price ? item.price.toString() : '') : '';
     let isSubmitting = false;
     let error = '';
 
     const dispatch = createEventDispatcher();
 
-    async function addItem() {
+    async function saveItem() {
         if (!name) return;
 
         isSubmitting = true;
@@ -19,9 +22,14 @@
 
         try {
             const priceValue = price ? parseFloat(price) : null;
+            const url = mode === 'add'
+                ? `/api/lists/${listId}/items`
+                : `/api/lists/${listId}/items/${item?.id}`;
 
-            const response = await fetch(`/api/lists/${listId}/items`, {
-                method: 'POST',
+            const method = mode === 'add' ? 'POST' : 'PATCH';
+
+            const response = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -34,16 +42,18 @@
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.message || 'Failed to add item');
+                throw new Error(data.message || 'Failed to save item');
             }
 
-            const newItem = await response.json();
-            dispatch('itemAdded', newItem);
+            const savedItem = await response.json();
+            dispatch('itemSaved', savedItem);
 
-            // Reset form
-            name = '';
-            link = '';
-            price = '';
+            // Reset form only in add mode
+            if (mode === 'add') {
+                name = '';
+                link = '';
+                price = '';
+            }
         } catch (err) {
             if (err instanceof Error) {
                 error = err.message;
@@ -63,7 +73,7 @@
         </div>
     {/if}
 
-    <form on:submit|preventDefault={addItem} class="space-y-4">
+    <form on:submit|preventDefault={saveItem} class="space-y-4">
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700">Item Name *</label>
             <input
@@ -103,7 +113,7 @@
                 disabled={isSubmitting || !name}
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-                {isSubmitting ? 'Adding...' : 'Add Item'}
+                {isSubmitting ? (mode === 'add' ? 'Adding...' : 'Saving...') : (mode === 'add' ? 'Add Item' : 'Save Changes')}
             </button>
         </div>
     </form>

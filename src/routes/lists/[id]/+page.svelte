@@ -1,9 +1,8 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import ItemForm from '$lib/components/items/ItemForm.svelte';
     import ItemList from '$lib/components/items/ItemList.svelte';
     import GifterNameModal from '$lib/components/modals/GifterNameModal.svelte';
-    import AddItemModal from '$lib/components/modals/AddItemModal.svelte';
+    import ItemModal from '$lib/components/modals/ItemModal.svelte';
     import type { Item, List } from '@prisma/client';
     import { creatorMode } from '$lib/stores/creatorMode';
 
@@ -186,6 +185,22 @@
         showAddItemModal = false;
     }
 
+    function handleItemUpdated(event: CustomEvent) {
+        const updatedItem = event.detail;
+
+        // Find the current item to preserve its gifters
+        const currentItem = items.find(item => item.id === updatedItem.id);
+
+        // Update the item in the items array, preserving the gifters
+        if (currentItem) {
+            items = items.map(item =>
+                item.id === updatedItem.id
+                    ? { ...updatedItem, gifters: currentItem.gifters }
+                    : item
+            );
+        }
+    }
+
     let shareLink = '';
     if (typeof window !== 'undefined') {
         shareLink = `${window.location.origin}/lists/${page.params.id}/share`;
@@ -227,7 +242,12 @@
         <!-- Creator view -->
         <div class="mt-6">
             <!-- Items list -->
-            <ItemList {items} isCreatorView={true} bind:this={itemListComponent} />
+            <ItemList
+                {items}
+                isCreatorView={true}
+                bind:this={itemListComponent}
+                on:itemUpdated={handleItemUpdated}
+            />
 
             <!-- Share section -->
             <div class="mt-6 bg-gray-50 p-4 rounded-lg">
@@ -264,6 +284,7 @@
                 on:takeItem={handleTakeItem}
                 on:giftWithMe={handleGiftWithMe}
                 on:undoAction={handleUndoAction}
+                on:itemUpdated={handleItemUpdated}
                 bind:this={itemListComponent}
             />
         </div>
@@ -277,7 +298,7 @@
         on:confirm={handleModalConfirm}
     />
 
-    <AddItemModal
+    <ItemModal
         show={showAddItemModal}
         listId={page.params.id}
         on:close={() => (showAddItemModal = false)}

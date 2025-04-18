@@ -31,6 +31,10 @@
         dispatch('undoAction', itemId);
     }
 
+    function handleItemUpdated(event: CustomEvent<Item>) {
+        dispatch('itemUpdated', event.detail);
+    }
+
     // This function should be called after the item state is successfully updated
     export function setLastModifiedItem(itemId: string) {
         lastModifiedItemId = itemId;
@@ -54,6 +58,7 @@
                     on:takeItem={handleTakeItem}
                     on:giftWithMe={handleGiftWithMe}
                     on:undoAction={handleUndoAction}
+                    on:itemUpdated={handleItemUpdated}
                 />
             {/each}
         </div>

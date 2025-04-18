@@ -214,7 +214,6 @@
                 throw new Error(data.message || 'Failed to delete item');
             }
 
-            // Lokalen Zustand aktualisieren
             items = items.filter(item => item.id !== itemId);
         } catch (err) {
             console.error('Failed to delete item:', err);

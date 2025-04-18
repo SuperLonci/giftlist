@@ -303,5 +303,6 @@
         listId={page.params.id}
         on:close={() => (showAddItemModal = false)}
         on:itemAdded={handleAddItem}
+        on:itemUpdated={handleItemUpdated}
     />
 </div>

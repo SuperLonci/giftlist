@@ -4,7 +4,7 @@
     import { createEventDispatcher } from 'svelte';
 
     export let items: (Item & { gifters: Gifter[] })[] = [];
-    export let isCreatorView = false;
+    export let isCreatorView;
 
     const dispatch = createEventDispatcher();
 

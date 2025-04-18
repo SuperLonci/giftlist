@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Item, List } from '@prisma/client';
     import { createEventDispatcher } from 'svelte';
+    import { goto } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import DeleteWarningModal from '$lib/components/modals/DeleteWarningModal.svelte';
 
@@ -36,19 +37,31 @@
             showDeleteWarning = false;
         }
     }
+
+    function navigateToList() {
+        goto(`/lists/${list.id}`);
+    }
 </script>
 
 <div class="bg-white overflow-hidden shadow rounded-lg">
     <div class="p-5">
-        <h4 class="text-lg font-semibold">{list.title}</h4>
+        <h4
+            class="text-lg font-semibold cursor-pointer text-indigo-600 hover:text-indigo-500"
+            on:click={navigateToList}>
+            {list.title}
+        </h4>
         <p class="text-sm text-gray-500">{list.description || 'No Description'}</p>
         <p class="text-sm text-gray-500 mt-2">{list.items.length} items</p>
     </div>
     <div class="bg-gray-50 px-5 py-3 flex justify-between items-center">
         <div class="flex space-x-4">
-            <a href="/lists/{list.id}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+            <button
+                on:click={navigateToList}
+                class="cursor-pointer text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
                 View List
-            </a>
+            </button>
+            <!--            copy link modal instead of routing -->
             <a href="/lists/{list.id}/share" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                 Share
             </a>

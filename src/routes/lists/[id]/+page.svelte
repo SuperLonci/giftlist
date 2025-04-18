@@ -201,6 +201,26 @@
         }
     }
 
+    async function handleDeleteItem(event: CustomEvent<string>) {
+        const itemId = event.detail;
+
+        try {
+            const response = await fetch(`/api/lists/${page.params.id}/items/${itemId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to delete item');
+            }
+
+            // Lokalen Zustand aktualisieren
+            items = items.filter(item => item.id !== itemId);
+        } catch (err) {
+            console.error('Failed to delete item:', err);
+        }
+    }
+
     let shareLink = '';
     if (typeof window !== 'undefined') {
         shareLink = `${window.location.origin}/lists/${page.params.id}/share`;
@@ -245,8 +265,9 @@
             <ItemList
                 {items}
                 isCreatorView={true}
-                bind:this={itemListComponent}
                 on:itemUpdated={handleItemUpdated}
+                on:deleteItem={handleDeleteItem}
+                bind:this={itemListComponent}
             />
 
             <!-- Share section -->

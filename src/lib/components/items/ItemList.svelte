@@ -35,6 +35,11 @@
         dispatch('itemUpdated', event.detail);
     }
 
+    function handleDeleteItem(event: CustomEvent<string>) {
+        const itemId = event.detail;
+        dispatch('deleteItem', itemId);
+    }
+
     // This function should be called after the item state is successfully updated
     export function setLastModifiedItem(itemId: string) {
         lastModifiedItemId = itemId;
@@ -59,6 +64,7 @@
                     on:giftWithMe={handleGiftWithMe}
                     on:undoAction={handleUndoAction}
                     on:itemUpdated={handleItemUpdated}
+                    on:deleteItem={handleDeleteItem}
                 />
             {/each}
         </div>

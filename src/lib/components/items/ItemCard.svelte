@@ -3,6 +3,7 @@
     import type { Item, Gifter } from '@prisma/client';
     import TakeOverWarningModal from '$lib/components/modals/TakeOverWarningModal.svelte';
     import ItemModal from '$lib/components/modals/ItemModal.svelte';
+    import DeleteWarningModal from '$lib/components/modals/DeleteWarningModal.svelte';
 
     export let item: Item & { gifters: Gifter[] };
     export let isCreatorView;
@@ -46,6 +47,21 @@
         dispatch('itemUpdated', updatedItem);
         showItemModal = false;
     }
+
+    let showDeleteWarning = false;
+
+    function handleDelete() {
+        showDeleteWarning = true;
+    }
+
+    function confirmDelete() {
+        showDeleteWarning = false;
+        dispatch('deleteItem', item.id);
+    }
+
+    function cancelDelete() {
+        showDeleteWarning = false;
+    }
 </script>
 
 <div class="bg-white p-4 rounded-lg shadow mb-4 relative group">
@@ -87,7 +103,7 @@
             {/if}
         </div>
 
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-10">
             {#if showUndoButton}
                 <button
                     on:click={handleUndo}
@@ -112,6 +128,18 @@
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button
+                    on:click={handleDelete}
+                    aria-label="Delete item"
+                    class="absolute right-2 bg-red-100 text-red-800 rounded-full p-2 hover:bg-red-200 group-hover:block hidden"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                 </button>
             {/if}
@@ -142,6 +170,12 @@
     on:cancel={() => confirmTakeOver('cancel')}
     on:giftTogether={() => confirmTakeOver('giftTogether')}
     on:takeOver={() => confirmTakeOver('takeOver')}
+/>
+
+<DeleteWarningModal
+    show={showDeleteWarning}
+    on:cancel={cancelDelete}
+    on:confirmDelete={confirmDelete}
 />
 
 <ItemModal

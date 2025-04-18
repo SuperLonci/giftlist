@@ -43,3 +43,23 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
         return json({ message: 'Failed to update item' }, { status: 500 });
     }
 };
+
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+    const itemId = params.itemId;
+    const userId = locals.userId;
+
+    if (!userId) {
+        return json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        await prisma.item.delete({
+            where: { id: itemId }
+        });
+
+        return json({ message: 'Item deleted successfully' });
+    } catch (error) {
+        console.error('Failed to delete item:', error);
+        return json({ message: 'Failed to delete item' }, { status: 500 });
+    }
+};

@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { invalidate } from '$app/navigation';
     import ListGrid from '$lib/components/lists/ListGrid.svelte';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import DeleteWarningModal from '$lib/components/modals/DeleteWarningModal.svelte';
@@ -10,39 +11,90 @@
     let showDeleteWarning = false;
     let selectedList: List | null = null;
     let modalMode: 'add' | 'edit' = 'add';
+    let deletingListId: string | null = null;
 
     $: lists = (data.lists || []).map((list) => ({
         ...list,
         items: list.items || []
     }));
 
-    function handleEdit(event: CustomEvent<List>) {
+    function handleEditList(event: CustomEvent<List>) {
         selectedList = event.detail;
         modalMode = 'edit';
         showListModal = true;
     }
 
-    function handleDelete(event: CustomEvent<string>) {
+    function handleListUpdated(event: CustomEvent) {
+        const updatedList = event.detail;
+
+        // Update the local state
+        lists = lists.map(list =>
+            list.id === updatedList.id
+                ? { ...list, ...updatedList }
+                : list
+        );
+
+        // Refresh the data from the server
+        invalidateData();
+    }
+
+    function handleDeleteList(event: CustomEvent<string>) {
+        deletingListId = event.detail;
         selectedList = lists.find(l => l.id === event.detail) || null;
         showDeleteWarning = true;
     }
 
     async function confirmDelete() {
-        if (!selectedList) return;
+        if (!deletingListId) return;
 
         try {
-            const response = await fetch(`/api/lists/${selectedList.id}`, {
+            const response = await fetch(`/api/lists/${deletingListId}`, {
                 method: 'DELETE'
             });
 
             if (!response.ok) throw new Error('Failed to delete list');
 
+            // Remove from local state immediately for better UX
+            lists = lists.filter(list => list.id !== deletingListId);
+
+            // Then refresh data from server to ensure consistency
+            await invalidate('app:lists');
         } catch (error) {
             console.error('Error deleting list:', error);
+            // Optionally show an error message to the user
+        } finally {
+            // Always reset the deletion state
+            showDeleteWarning = false;
+            selectedList = null;
+            deletingListId = null;
+        }
+    }
+
+    async function handleListSaved(event: CustomEvent) {
+        const savedList = event.detail;
+
+        // Update local state first for immediate feedback
+        if (modalMode === 'edit') {
+            lists = lists.map(list =>
+                list.id === savedList.id ? { ...savedList, items: list.items || [] } : list
+            );
+        } else {
+            // Handle newly created list - ensure it has items property
+            const newList = { ...savedList, items: [] };
+            lists = [...lists, newList];
         }
 
-        showDeleteWarning = false;
+        // Refresh data from server
+        invalidateData();
+
+        // Close modal
+        showListModal = false;
         selectedList = null;
+    }
+
+    // Helper function to refresh data
+    function invalidateData() {
+        invalidate('app:lists');
     }
 </script>
 
@@ -67,8 +119,9 @@
     <div class="mt-6">
         <ListGrid
             {lists}
-            on:editList={handleEdit}
-            on:deleteList={handleDelete}
+            on:editList={handleEditList}
+            on:deleteList={handleDeleteList}
+            on:listUpdated={handleListUpdated}
         />
     </div>
 </div>
@@ -81,12 +134,7 @@
         showListModal = false;
         selectedList = null;
     }}
-    on:listSaved={(event: CustomEvent) => {
-        const updatedList = event.detail;
-        lists = lists.map(l => l.id === updatedList.id ? updatedList : l);
-        showListModal = false;
-        selectedList = null;
-    }}
+    on:listSaved={handleListSaved}
 />
 
 <DeleteWarningModal
@@ -94,6 +142,7 @@
     on:cancel={() => {
         showDeleteWarning = false;
         selectedList = null;
+        deletingListId = null;
     }}
     on:confirmDelete={confirmDelete}
 />

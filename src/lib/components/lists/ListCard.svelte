@@ -2,40 +2,17 @@
     import type { Item, List } from '@prisma/client';
     import { createEventDispatcher } from 'svelte';
     import { goto } from '$app/navigation';
-    import ListModal from '$lib/components/modals/ListModal.svelte';
-    import DeleteWarningModal from '$lib/components/modals/DeleteWarningModal.svelte';
 
     export let list: List & { items: Item[] };
 
     const dispatch = createEventDispatcher();
 
-    let showListModal = false;
-    let showDeleteWarning = false;
-
     function handleEdit() {
-        showListModal = true;
+        dispatch('editList', list);
     }
 
-    async function handleDelete() {
-        showDeleteWarning = true;
-    }
-
-    async function confirmDelete() {
-        try {
-            const response = await fetch(`/api/lists/${list.id}`, {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error('Error when deleting the list');
-            }
-
-            dispatch('listDeleted', list.id);
-        } catch (error) {
-            console.error('Error deleting:', error);
-        } finally {
-            showDeleteWarning = false;
-        }
+    function handleDelete() {
+        dispatch('deleteList', list.id);
     }
 
     function navigateToList() {
@@ -61,7 +38,6 @@
             >
                 View List
             </button>
-            <!--            copy link modal instead of routing -->
             <a href="/lists/{list.id}/share" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                 Share
             </a>
@@ -82,21 +58,3 @@
         </div>
     </div>
 </div>
-
-<ListModal
-    show={showListModal}
-    mode="edit"
-    list={list}
-    on:close={() => (showListModal = false)}
-    on:listSaved={(event: CustomEvent) => {
-            const updatedList = event.detail;
-            dispatch('listUpdated', updatedList);
-            showListModal = false;
-        }}
-/>
-
-<DeleteWarningModal
-    show={showDeleteWarning}
-    on:cancel={() => (showDeleteWarning = false)}
-    on:confirmDelete={confirmDelete}
-/>

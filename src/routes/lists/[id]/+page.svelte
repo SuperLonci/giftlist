@@ -187,11 +187,8 @@
 
     function handleItemUpdated(event: CustomEvent) {
         const updatedItem = event.detail;
-
-        // Find the current item to preserve its gifters
         const currentItem = items.find(item => item.id === updatedItem.id);
 
-        // Update the item in the items array, preserving the gifters
         if (currentItem) {
             items = items.map(item =>
                 item.id === updatedItem.id
@@ -287,10 +284,7 @@
                         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         on:click={() => {
                             if (typeof window !== 'undefined') {
-                                navigator.clipboard.writeText(shareLink);
-                            }}
-                            }
-                    >
+                                navigator.clipboard.writeText(shareLink);}}}>
                         Copy
                     </button>
                 </div>

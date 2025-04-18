@@ -9,8 +9,18 @@
     const dispatch = createEventDispatcher();
     let isProcessing = false;
     let error = '';
-    let title = list?.title ?? '';
-    let description = list?.description ?? '';
+    let title = '';
+    let description = '';
+
+    // This reactive statement will update form values whenever the list prop changes
+    $: if (list && show) {
+        title = list.title || '';
+        description = list.description || '';
+    } else if (!list && mode === 'add' && show) {
+        // Reset fields when opening modal in add mode
+        title = '';
+        description = '';
+    }
 
     async function handleSubmit() {
         isProcessing = true;

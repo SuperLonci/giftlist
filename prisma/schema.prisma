@@ -11,22 +11,28 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  password        String
-  name            String
-  lists           List[]
-  defaultCurrency String    @default("EUR")
-  sessions        Session[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                      String                    @id @default(uuid())
+  email                   String                    @unique
+  password                String
+  name                    String
+  lists                   List[]
+  defaultCurrency         String                    @default("EUR")
+  sessions                Session[]
+  emailVerified           Boolean                   @default(false)
+  totp_key                Bytes?
+  recovery_code           Bytes?
+  emailVerificationRequests EmailVerificationRequest[]
+  passwordResetSessions   PasswordResetSession[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
 }
 
 model Session {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id
+  userId           String
+  expiresAt        DateTime
+  twoFactorVerified Boolean  @default(false)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model List {
@@ -73,4 +79,24 @@ enum ItemStatus {
   GIFT_WITH_ME
   AVAILABLE
   UNAVAILABLE
+}
+
+model EmailVerificationRequest {
+  id        String   @id
+  userId    String
+  code      String
+  email     String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetSession {
+  id               String   @id
+  userId           String
+  email            String
+  code             String
+  expiresAt        DateTime
+  emailVerified    Boolean  @default(false)
+  twoFactorVerified Boolean  @default(false)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

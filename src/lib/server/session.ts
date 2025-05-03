@@ -24,16 +24,14 @@ export async function validateSessionToken(token: string): Promise<SessionValida
     const session: Session = {
         id: sessionWithUser.id,
         userId: sessionWithUser.userId,
-        expiresAt: sessionWithUser.expiresAt,
-        twoFactorVerified: sessionWithUser.twoFactorVerified || false
+        expiresAt: sessionWithUser.expiresAt
     };
 
     const user: User = {
         id: sessionWithUser.user.id,
         email: sessionWithUser.user.email,
         username: sessionWithUser.user.name,
-        emailVerified: sessionWithUser.user.emailVerified || false,
-        registered2FA: sessionWithUser.user.totp_key !== null
+        emailVerified: sessionWithUser.user.emailVerified || false
     };
 
     if (Date.now() >= session.expiresAt.getTime()) {
@@ -60,16 +58,16 @@ export async function validateSessionToken(token: string): Promise<SessionValida
     return { session, user };
 }
 
-export function invalidateSession(sessionId: string): void {
-    prisma.session.delete({
+export async function invalidateSession(sessionId: string): Promise<void> {
+    await prisma.session.delete({
         where: {
             id: sessionId
         }
     });
 }
 
-export function invalidateUserSessions(userId: number): void {
-    prisma.session.deleteMany({
+export async function invalidateUserSessions(userId: number): Promise<void> {
+    await prisma.session.deleteMany({
         where: {
             userId: userId.toString()
         }
@@ -103,45 +101,29 @@ export function generateSessionToken(): string {
     return token;
 }
 
-export function createSession(token: string, userId: string, flags: SessionFlags): Session {
+export async function createSession(token: string, userId: string): Promise<Session> {
     const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
 
-    prisma.session.create({
+    await prisma.session.create({
         data: {
             id: sessionId,
             userId: userId.toString(),
-            expiresAt: expiresAt,
-            twoFactorVerified: flags.twoFactorVerified
+            expiresAt: expiresAt
         }
     });
 
     const session: Session = {
         id: sessionId,
         userId,
-        expiresAt,
-        twoFactorVerified: flags.twoFactorVerified
+        expiresAt
     };
 
     return session;
 }
 
-export function setSessionAs2FAVerified(sessionId: string): void {
-    prisma.session.update({
-        where: {
-            id: sessionId
-        },
-        data: {
-            twoFactorVerified: true
-        }
-    });
-}
 
-export interface SessionFlags {
-    twoFactorVerified: boolean;
-}
-
-export interface Session extends SessionFlags {
+export interface Session {
     id: string;
     expiresAt: Date;
     userId: string;

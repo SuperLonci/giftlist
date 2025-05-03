@@ -10,7 +10,6 @@ import {
     setEmailVerificationRequestCookie
 } from '$lib/server/email-verification';
 
-import type { SessionFlags } from '$lib/server/session';
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
 
 const ipBucket = new RefillingTokenBucket<string>(3, 10);
@@ -19,12 +18,6 @@ export function load(event: PageServerLoadEvent) {
     if (event.locals.session !== null && event.locals.user !== null) {
         if (!event.locals.user.emailVerified) {
             return redirect(302, '/verify-email');
-        }
-        if (!event.locals.user.registered2FA) {
-            return redirect(302, '/2fa/setup');
-        }
-        if (!event.locals.session.twoFactorVerified) {
-            return redirect(302, '/2fa');
         }
         return redirect(302, '/');
     }
@@ -106,11 +99,8 @@ async function action(event: RequestEvent) {
     sendVerificationEmail(emailVerificationRequest.email, emailVerificationRequest.code);
     setEmailVerificationRequestCookie(event, emailVerificationRequest);
 
-    const sessionFlags: SessionFlags = {
-        twoFactorVerified: false
-    };
     const sessionToken = generateSessionToken();
-    const session = await createSession(sessionToken, user.id, sessionFlags);
+    const session = await createSession(sessionToken, user.id);
     setSessionTokenCookie(event, sessionToken, session.expiresAt);
-    throw redirect(302, '/2fa/setup');
+    throw redirect(302, '/verify-email');
 }

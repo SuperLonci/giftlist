@@ -26,8 +26,7 @@ export async function createUser(email: string, username: string, password: stri
         id: createdUser.id,
         username,
         email,
-        emailVerified: false,
-        registered2FA: false
+        emailVerified: false
     };
 
     return user;
@@ -80,7 +79,7 @@ export async function setUserAsEmailVerifiedIfEmailMatches(
     }
 }
 
-export async function getUserPasswordHash(userId: number): Promise<string> {
+export async function getUserPasswordHash(userId: string): Promise<string> {
     const user = await prisma.user.findUnique({
         where: {
             id: userId.toString()
@@ -114,39 +113,6 @@ export async function getUserRecoverCode(userId: number): Promise<string> {
     return decryptToString(user.recovery_code);
 }
 
-export async function getUserTOTPKey(userId: number): Promise<Uint8Array | null> {
-    const user = await prisma.user.findUnique({
-        where: {
-            id: userId.toString()
-        },
-        select: {
-            totp_key: true
-        }
-    });
-
-    if (!user) {
-        throw new Error('Invalid user ID');
-    }
-
-    if (!user.totp_key) {
-        return null;
-    }
-
-    return decrypt(user.totp_key);
-}
-
-export async function updateUserTOTPKey(userId: number, key: Uint8Array): Promise<void> {
-    const encrypted = encrypt(key);
-    await prisma.user.update({
-        where: {
-            id: userId.toString()
-        },
-        data: {
-            totp_key: encrypted
-        }
-    });
-}
-
 export async function resetUserRecoveryCode(userId: number): Promise<string> {
     const recoveryCode = generateRandomRecoveryCode();
     const encrypted = encryptString(recoveryCode);
@@ -178,8 +144,7 @@ export async function getUserFromEmail(email: string): Promise<User | null> {
         id: user.id,
         email: user.email,
         username: user.name,
-        emailVerified: user.emailVerified || false,
-        registered2FA: user.totp_key !== null
+        emailVerified: user.emailVerified || false
     };
 }
 
@@ -188,5 +153,4 @@ export interface User {
     email: string;
     username: string;
     emailVerified: boolean;
-    registered2FA: boolean;
 }

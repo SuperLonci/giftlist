@@ -51,13 +51,6 @@ async function verifyCode(event: RequestEvent) {
             }
         });
     }
-    if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-        return fail(403, {
-            verify: {
-                message: 'Forbidden'
-            }
-        });
-    }
     if (!bucket.check(event.locals.user.id, 1)) {
         return fail(429, {
             verify: {
@@ -120,9 +113,6 @@ async function verifyCode(event: RequestEvent) {
     await invalidateUserPasswordResetSessions(event.locals.user.id);
     await updateUserEmailAndSetEmailAsVerified(event.locals.user.id, verificationRequest.email);
     deleteEmailVerificationRequestCookie(event);
-    if (!event.locals.user.registered2FA) {
-        return redirect(302, '/2fa/setup');
-    }
     return redirect(302, '/');
 }
 
@@ -131,13 +121,6 @@ async function resendEmail(event: RequestEvent) {
         return fail(401, {
             resend: {
                 message: 'Not authenticated'
-            }
-        });
-    }
-    if (event.locals.user.registered2FA && !event.locals.session.twoFactorVerified) {
-        return fail(403, {
-            resend: {
-                message: 'Forbidden'
             }
         });
     }

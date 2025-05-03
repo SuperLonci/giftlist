@@ -4,8 +4,6 @@ import { getUserFromEmail, getUserPasswordHash } from '$lib/server/user';
 import { RefillingTokenBucket, Throttler } from '$lib/server/rate-limit';
 import { verifyPasswordHash } from '$lib/server/password';
 import { createSession, generateSessionToken, setSessionTokenCookie } from '$lib/server/session';
-
-import type { SessionFlags } from '$lib/server/session';
 import type { Actions, PageServerLoadEvent, RequestEvent } from './$types';
 
 export function load(event: PageServerLoadEvent) {
@@ -13,18 +11,12 @@ export function load(event: PageServerLoadEvent) {
         if (!event.locals.user.emailVerified) {
             return redirect(302, '/verify-email');
         }
-        if (!event.locals.user.registered2FA) {
-            return redirect(302, '/2fa/setup');
-        }
-        if (!event.locals.session.twoFactorVerified) {
-            return redirect(302, '/2fa');
-        }
         return redirect(302, '/');
     }
     return {};
 }
 
-const throttler = new Throttler<number>([0, 1, 2, 4, 8, 16, 30, 60, 180, 300]);
+const throttler = new Throttler<string>([0, 1, 2, 4, 8, 16, 30, 60, 180, 300]);
 const ipBucket = new RefillingTokenBucket<string>(20, 1);
 
 export const actions: Actions = {
@@ -90,18 +82,12 @@ async function action(event: RequestEvent) {
         });
     }
     throttler.reset(user.id);
-    const sessionFlags: SessionFlags = {
-        twoFactorVerified: false
-    };
     const sessionToken = generateSessionToken();
-    const session = await createSession(sessionToken, user.id, sessionFlags);
+    const session = await createSession(sessionToken, user.id);
     setSessionTokenCookie(event, sessionToken, session.expiresAt);
 
     if (!user.emailVerified) {
         return redirect(302, '/verify-email');
     }
-    if (!user.registered2FA) {
-        return redirect(302, '/2fa/setup');
-    }
-    return redirect(302, '/2fa');
+    return redirect(302, '/');
 }

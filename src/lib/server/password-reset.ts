@@ -22,8 +22,7 @@ export async function createPasswordResetSession(
             email,
             code,
             expiresAt,
-            emailVerified: false,
-            twoFactorVerified: false
+            emailVerified: false
         }
     });
 
@@ -33,8 +32,7 @@ export async function createPasswordResetSession(
         email,
         expiresAt,
         code,
-        emailVerified: false,
-        twoFactorVerified: false
+        emailVerified: false
     };
 
     return session;
@@ -64,16 +62,14 @@ export async function validatePasswordResetSessionToken(
         email: sessionWithUser.email,
         code: sessionWithUser.code,
         expiresAt: sessionWithUser.expiresAt,
-        emailVerified: sessionWithUser.emailVerified,
-        twoFactorVerified: sessionWithUser.twoFactorVerified
+        emailVerified: sessionWithUser.emailVerified
     };
 
     const user: User = {
         id: sessionWithUser.user.id,
         email: sessionWithUser.user.email,
         username: sessionWithUser.user.name,
-        emailVerified: sessionWithUser.user.emailVerified,
-        registered2FA: sessionWithUser.user.totp_key !== null
+        emailVerified: sessionWithUser.user.emailVerified
     };
 
     if (Date.now() >= session.expiresAt.getTime()) {
@@ -99,16 +95,6 @@ export async function setPasswordResetSessionAsEmailVerified(sessionId: string):
     });
 }
 
-export async function setPasswordResetSessionAs2FAVerified(sessionId: string): Promise<void> {
-    await prisma.passwordResetSession.update({
-        where: {
-            id: sessionId
-        },
-        data: {
-            twoFactorVerified: true
-        }
-    });
-}
 
 export async function invalidateUserPasswordResetSessions(userId: string): Promise<void> {
     await prisma.passwordResetSession.deleteMany({
@@ -167,7 +153,6 @@ export interface PasswordResetSession {
     expiresAt: Date;
     code: string;
     emailVerified: boolean;
-    twoFactorVerified: boolean;
 }
 
 export type PasswordResetSessionValidationResult =

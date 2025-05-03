@@ -19,7 +19,6 @@ model User {
   defaultCurrency         String                    @default("EUR")
   sessions                Session[]
   emailVerified           Boolean                   @default(false)
-  totp_key                Bytes?
   recovery_code           Bytes?
   emailVerificationRequests EmailVerificationRequest[]
   passwordResetSessions   PasswordResetSession[]
@@ -31,7 +30,6 @@ model Session {
   id               String   @id
   userId           String
   expiresAt        DateTime
-  twoFactorVerified Boolean  @default(false)
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -97,6 +95,5 @@ model PasswordResetSession {
   code             String
   expiresAt        DateTime
   emailVerified    Boolean  @default(false)
-  twoFactorVerified Boolean  @default(false)
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

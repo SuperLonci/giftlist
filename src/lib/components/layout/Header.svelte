@@ -1,6 +1,7 @@
 <script lang="ts">
     import { creatorMode } from '$lib/stores/creatorMode';
-    import { invalidate } from '$app/navigation';
+    import { auth } from '$lib/stores/auth';
+    import { invalidate, goto } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import type { List } from '@prisma/client';
 
@@ -62,11 +63,17 @@
                         Creator Mode: OFF
                     {/if}
                 </button>
-                {#if true}
+                {#if $auth.isAuthenticated}
                     <button class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
                         Profile
                     </button>
-                    <button class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
+                    <button
+                        on:click={() => {
+                            auth.logout();
+                            goto('/login');
+                        }}
+                        class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
                         Logout
                     </button>
                 {:else}

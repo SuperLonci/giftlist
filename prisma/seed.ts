@@ -1,12 +1,22 @@
 import prisma from '../src/lib/server/prisma';
+import bcrypt from 'bcrypt';
+
+// Hash password function
+async function hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+}
 
 async function seed() {
     console.log('🌱 Seeding fresh data...');
 
+    // Hash passwords for test users
+    const hashedPassword1 = await hashPassword('password123');
+    const hashedPassword2 = await hashPassword('password456');
+
     const user1 = await prisma.user.create({
         data: {
             email: 'user1@example.com',
-            password: 'password123',
+            password: hashedPassword1,
             name: 'user1',
             defaultCurrency: 'EUR'
         }
@@ -15,7 +25,7 @@ async function seed() {
     const user2 = await prisma.user.create({
         data: {
             email: 'user2@example.com',
-            password: 'password456',
+            password: hashedPassword2,
             name: 'user2',
             defaultCurrency: 'EUR'
         }

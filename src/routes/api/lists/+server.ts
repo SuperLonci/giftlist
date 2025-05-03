@@ -16,20 +16,16 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     const order = url.searchParams.get('order') || 'desc';
 
     try {
-        // Get user for testing (in production, you'd use the authenticated user)
-        const user = await prisma.user.findFirst({
-            where: { name: 'user1' }
-        });
-
-        if (!user) {
-            return json({ message: 'User not found' }, { status: 404 });
+        // Check if user is authenticated
+        if (!userId) {
+            return json({ message: 'Unauthorized' }, { status: 401 });
         }
 
         // Query for lists
         const lists = await prisma.list.findMany({
-            // where: {
-            //     creatorId: user.id
-            // },
+            where: {
+                creatorId: userId
+            },
             orderBy: {
                 [sort]: order === 'desc' ? 'desc' : 'asc'
             },
@@ -64,19 +60,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     try {
-        const userExists = await prisma.user.findFirst({
-            where: { name: 'user1' }
-        });
-
-        if (!userExists) {
-            return json({ message: 'User does not exist' }, { status: 400 });
-        }
-
         const list = await prisma.list.create({
             data: {
                 title,
                 description: description || null,
-                creatorId: userExists.id
+                creatorId: userId
             }
         });
 

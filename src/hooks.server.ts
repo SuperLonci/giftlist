@@ -1,11 +1,23 @@
 import type { Handle } from '@sveltejs/kit';
+import { extractTokenFromHeader, verifyToken } from '$lib/server/auth';
 
 export const handle: Handle = async ({ event, resolve }) => {
-    // In a real app, you would get the user from a session
-    // For this example, we'll use a mock user ID for demonstration
+    // Get the authorization header from the request
+    const authHeader = event.request.headers.get('authorization');
 
-    // Mock user for demonstration (in a real app, this would come from authentication)
-    event.locals.userId = 'user1';
+    // Extract the token from the header
+    const token = extractTokenFromHeader(authHeader);
+
+    if (token) {
+        // Verify the token
+        const payload = verifyToken(token);
+
+        if (payload) {
+            // Set the user ID in locals
+            event.locals.userId = payload.userId;
+            event.locals.user = { id: payload.userId };
+        }
+    }
 
     return resolve(event);
 };

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from 'svelte';
     import type { Item } from '@prisma/client';
+    import { SUPPORTED_CURRENCIES } from '$lib/utils/currency';
 
     export let listId: string;
     export let mode: 'add' | 'edit' = 'add';
@@ -9,6 +10,7 @@
     let name = item ? item.name : '';
     let link = item ? item.link || '' : '';
     let price = item ? (item.price ? item.price.toString() : '') : '';
+    let currency = item ? item.currency : 'EUR';
     let isSubmitting = false;
     let error = '';
 
@@ -36,7 +38,8 @@
                 body: JSON.stringify({
                     name,
                     link: link || null,
-                    price: priceValue
+                    price: priceValue,
+                    currency
                 })
             });
 
@@ -48,11 +51,12 @@
             const savedItem = await response.json();
             dispatch('itemSaved', savedItem);
 
-            // Reset form only in add mode
+            // Reset form only in add-mode
             if (mode === 'add') {
                 name = '';
                 link = '';
                 price = '';
+                currency = 'EUR';
             }
 
             isSubmitting = false;
@@ -106,16 +110,31 @@
             />
         </div>
 
-        <div>
-            <label for="price" class="block text-sm font-medium text-gray-700">Price (optional)</label>
-            <input
-                type="number"
-                id="price"
-                bind:value={price}
-                step="0.01"
-                min="0"
-                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="price" class="block text-sm font-medium text-gray-700">Price (optional)</label>
+                <input
+                    type="number"
+                    id="price"
+                    bind:value={price}
+                    step="1.00"
+                    min="0"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+            </div>
+
+            <div>
+                <label for="currency" class="block text-sm font-medium text-gray-700">Currency</label>
+                <select
+                    id="currency"
+                    bind:value={currency}
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                >
+                    {#each SUPPORTED_CURRENCIES as currencyOption}
+                        <option value={currencyOption}>{currencyOption}</option>
+                    {/each}
+                </select>
+            </div>
         </div>
     </form>
 </div>

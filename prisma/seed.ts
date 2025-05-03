@@ -1,15 +1,5 @@
 import prisma from '../src/lib/server/prisma';
 
-async function clearDatabase() {
-    console.log('🌱 Clearing existing data...');
-    await prisma.$transaction([
-        prisma.gifter.deleteMany(),
-        prisma.item.deleteMany(),
-        prisma.list.deleteMany(),
-        prisma.user.deleteMany()
-    ]);
-}
-
 async function seed() {
     console.log('🌱 Seeding fresh data...');
 
@@ -17,7 +7,8 @@ async function seed() {
         data: {
             email: 'user1@example.com',
             password: 'password123',
-            name: 'user1'
+            name: 'user1',
+            defaultCurrency: 'EUR'
         }
     });
 
@@ -25,7 +16,8 @@ async function seed() {
         data: {
             email: 'user2@example.com',
             password: 'password456',
-            name: 'user2'
+            name: 'user2',
+            defaultCurrency: 'EUR'
         }
     });
 
@@ -38,11 +30,13 @@ async function seed() {
                 create: [
                     {
                         name: 'Milch',
-                        price: 1.5
+                        price: 1.5,
+                        currency: 'EUR'
                     },
                     {
                         name: 'Brot',
-                        price: 2.0
+                        price: 2.0,
+                        currency: 'EUR'
                     }
                 ]
             }
@@ -58,12 +52,23 @@ async function seed() {
                 create: [
                     {
                         name: 'Buch',
-                        price: 15.0
+                        price: 15.0,
+                        currency: 'EUR'
                     }
                 ]
             }
         }
     });
+}
+
+async function clearDatabase() {
+    console.log('🌱 Clearing existing data...');
+    await prisma.$transaction([
+        prisma.gifter.deleteMany(),
+        prisma.item.deleteMany(),
+        prisma.list.deleteMany(),
+        prisma.user.deleteMany()
+    ]);
 }
 
 async function main() {

@@ -6,7 +6,7 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
     const listId = params.id;
     const itemId = params.itemId;
     const userId = locals.userId;
-    const { name, link, price } = await request.json(); // Item ID aus dem Request-Body
+    const { name, link, price, currency } = await request.json(); // Item ID aus dem Request-Body
 
     if (!userId) {
         return json({ message: 'Unauthorized' }, { status: 401 });
@@ -33,7 +33,8 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
             data: {
                 name,
                 link,
-                price
+                price,
+                currency
             }
         });
 

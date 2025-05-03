@@ -4,6 +4,7 @@
     import TakeOverWarningModal from '$lib/components/modals/TakeOverWarningModal.svelte';
     import ItemModal from '$lib/components/modals/ItemModal.svelte';
     import DeleteWarningModal from '$lib/components/modals/DeleteWarningModal.svelte';
+    import { formatPrice } from '$lib/utils/currency';
 
     export let item: Item & { gifters: Gifter[] };
     export let isCreatorView;
@@ -71,7 +72,7 @@
                 {item.name}
             </h5>
             {#if item.price}
-                <p class="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+                <span>{formatPrice(item.price, item.currency)}</span>
             {/if}
             {#if item.link}
                 <a href={item.link} target="_blank" rel="noopener noreferrer"

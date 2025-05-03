@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
     //     );
     // }
 
-    const { name, link, price } = await request.json();
+    const { name, link, price, currency } = await request.json();
 
     if (!name) {
         return json({ message: 'Item name is required' }, { status: 400 });
@@ -40,6 +40,7 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
                 name,
                 link,
                 price,
+                currency,
                 listId
             }
         });

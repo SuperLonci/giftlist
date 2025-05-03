@@ -19,7 +19,6 @@
     }
 
     async function handleListSaved() {
-        // Close the modal
         showCreateListModal = false;
 
         // Invalidate the app lists data to ensure consistency
@@ -28,13 +27,14 @@
 </script>
 
 <header class="bg-white shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-            <div class="flex">
-                <div class="flex-shrink-0 flex items-center">
+            <!-- Left side: Logo and navigation links -->
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
                     <a href="/" class="text-xl font-bold text-indigo-600">Wishlist App</a>
                 </div>
-                <div class="ml-6 hidden md:flex space-x-8">
+                <nav class="ml-6 hidden md:flex space-x-8">
                     <a href="/"
                        class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         Home
@@ -48,9 +48,10 @@
                         class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 bg-transparent">
                         Create List
                     </button>
-                </div>
+                </nav>
             </div>
 
+            <!-- Right side: Account settings -->
             <div class="flex items-center">
                 <button
                     on:click={() => creatorMode.update(value => !value)}

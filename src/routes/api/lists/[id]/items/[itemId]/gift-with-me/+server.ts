@@ -59,6 +59,14 @@ export const POST: RequestHandler = async ({ request, params }) => {
             }
         });
 
+        // Update the list's lastUpdated field
+        await prisma.list.update({
+            where: { id: listId },
+            data: {
+                updatedAt: new Date()
+            }
+        });
+
         return json(updatedItem);
     } catch (error) {
         console.error('Failed to mark item as gift with me:', error);

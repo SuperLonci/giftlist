@@ -38,6 +38,14 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
             }
         });
 
+        // Update the list's updatedAt timestamp
+        await prisma.list.update({
+            where: { id: listId },
+            data: {
+                updatedAt: new Date()
+            }
+        });
+
         return json(updatedItem);
     } catch (error) {
         console.error('Failed to update item:', error);
@@ -56,6 +64,14 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
     try {
         await prisma.item.delete({
             where: { id: itemId }
+        });
+
+        // Update the list's updatedAt field
+        await prisma.list.update({
+            where: { id: params.id },
+            data: {
+                updatedAt: new Date()
+            }
         });
 
         return json({ message: 'Item deleted successfully' });

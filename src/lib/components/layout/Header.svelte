@@ -1,5 +1,30 @@
 <script lang="ts">
     import { creatorMode } from '$lib/stores/creatorMode';
+    import { invalidate } from '$app/navigation';
+    import ListModal from '$lib/components/modals/ListModal.svelte';
+    import type { List } from '@prisma/client';
+
+    let showCreateListModal = false;
+    let selectedList: List | null = null;
+    let modalMode: 'add' | 'edit' = 'add';
+
+    function openCreateListModal() {
+        modalMode = 'add';
+        selectedList = null;
+        showCreateListModal = true;
+    }
+
+    function handleModalClose() {
+        showCreateListModal = false;
+    }
+
+    async function handleListSaved() {
+        // Close the modal
+        showCreateListModal = false;
+
+        // Invalidate the app lists data to ensure consistency
+        invalidate('app:lists');
+    }
 </script>
 
 <header class="bg-white shadow-sm">
@@ -18,10 +43,11 @@
                        class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         My Lists
                     </a>
-                    <a href="/lists/new"
-                       class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    <button
+                        on:click={openCreateListModal}
+                        class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 bg-transparent">
                         Create List
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -57,3 +83,13 @@
         </div>
     </div>
 </header>
+
+{#if showCreateListModal}
+    <ListModal
+        show={showCreateListModal}
+        mode={modalMode}
+        list={selectedList}
+        on:close={handleModalClose}
+        on:listSaved={handleListSaved}
+    />
+{/if}

@@ -45,6 +45,14 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
             }
         });
 
+        // Update the list's updatedAt timestamp
+        await prisma.list.update({
+            where: { id: listId },
+            data: {
+                updatedAt: new Date()
+            }
+        });
+
         return json(item);
     } catch (error) {
         console.error('Failed to create item:', error);

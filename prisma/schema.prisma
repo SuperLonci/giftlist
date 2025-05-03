@@ -11,14 +11,22 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
+  id              String    @id @default(uuid())
+  email           String    @unique
   password        String
   name            String
   lists           List[]
-  defaultCurrency String   @default("EUR")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  defaultCurrency String    @default("EUR")
+  sessions        Session[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model List {
@@ -29,7 +37,7 @@ model List {
   endDate     DateTime?
   items       Item[]
   creatorId   String
-  creator     User      @relation(fields: [creatorId], references: [id])
+  creator     User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -45,16 +53,18 @@ model Item {
   itemStatus  ItemStatus @default(AVAILABLE)
   gifters     Gifter[]
   listId      String
-  list        List       @relation(fields: [listId], references: [id])
+  list        List       @relation(fields: [listId], references: [id], onDelete: Cascade)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
 
 model Gifter {
-  id     String @id @default(uuid())
-  name   String
-  itemId String
-  item   Item   @relation(fields: [itemId], references: [id])
+  id        String   @id @default(uuid())
+  name      String
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ItemStatus {

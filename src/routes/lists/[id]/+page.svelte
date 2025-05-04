@@ -4,7 +4,6 @@
     import GifterNameModal from '$lib/components/modals/GifterNameModal.svelte';
     import ItemModal from '$lib/components/modals/ItemModal.svelte';
     import type { Item, List } from '@prisma/client';
-    import { creatorMode } from '$lib/stores/creatorMode';
 
     export let data: {
         list: List & {
@@ -12,7 +11,9 @@
                 gifters: {
                     name: string;
                     id: string;
-                    itemId: string
+                    itemId: string;
+                    createdAt: Date;
+                    updatedAt: Date;
                 }[]
             })[]
         }; isCreator: boolean
@@ -219,7 +220,7 @@
 
     let shareLink = '';
     if (typeof window !== 'undefined') {
-        shareLink = `${window.location.origin}/lists/${page.params.id}/share`;
+        shareLink = `${window.location.origin}/lists/${page.params.id}`;
     }
 </script>
 
@@ -234,14 +235,14 @@
                     <p class="mt-2 text-sm text-gray-500">{list.description}</p>
                 {/if}
             </div>
-            {#if $creatorMode}
+            {#if isCreator}
             <span
                 class="flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                 Creator
             </span>
             {/if}
         </div>
-        {#if $creatorMode}
+        {#if isCreator}
             <!-- Add-Button -->
             <div class="flex items-center space-x-4">
                 <button
@@ -254,7 +255,7 @@
         {/if}
     </div>
 
-    {#if $creatorMode}
+    {#if isCreator}
         <!-- Creator view -->
         <div class="mt-6">
             <!-- Items list -->
@@ -294,7 +295,7 @@
         <div class="mt-6">
             <ItemList
                 {items}
-                isCreatorView={$creatorMode}
+                isCreatorView={isCreator}
                 on:takeItem={handleTakeItem}
                 on:giftWithMe={handleGiftWithMe}
                 on:undoAction={handleUndoAction}

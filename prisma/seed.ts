@@ -3,6 +3,7 @@ import prisma from '../src/lib/server/prisma';
 async function seed() {
     console.log('🌱 Seeding fresh data...');
 
+    // Create users
     const user1 = await prisma.user.create({
         data: {
             email: 'user1@example.com',
@@ -21,7 +22,17 @@ async function seed() {
         }
     });
 
-    await prisma.list.create({
+    // Create a session for user1
+    await prisma.session.create({
+        data: {
+            id: 'test-session-1',
+            userId: user1.id,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+        }
+    });
+
+    // Create lists with items and gifters
+    const firstList = await prisma.list.create({
         data: {
             title: 'Einkaufsliste',
             description: 'Lebensmittel und mehr',
@@ -31,19 +42,24 @@ async function seed() {
                     {
                         name: 'Milch',
                         price: 1.5,
-                        currency: 'EUR'
+                        currency: 'EUR',
+                        itemStatus: 'AVAILABLE'
                     },
                     {
                         name: 'Brot',
                         price: 2.0,
-                        currency: 'EUR'
+                        currency: 'EUR',
+                        itemStatus: 'AVAILABLE'
                     }
                 ]
             }
+        },
+        include: {
+            items: true
         }
     });
 
-    await prisma.list.create({
+    const secondList = await prisma.list.create({
         data: {
             title: 'Wunschliste',
             description: 'Meine Geburtstagswünsche',
@@ -53,12 +69,33 @@ async function seed() {
                     {
                         name: 'Buch',
                         price: 15.0,
-                        currency: 'EUR'
+                        currency: 'EUR',
+                        itemStatus: 'AVAILABLE'
+                    },
+                    {
+                        name: 'Spielzeug',
+                        description: 'Ein cooles Spielzeug',
+                        price: 25.0,
+                        currency: 'EUR',
+                        itemStatus: 'TAKEN'
                     }
                 ]
             }
+        },
+        include: {
+            items: true
         }
     });
+
+    // Add gifters to some items
+    await prisma.gifter.create({
+        data: {
+            name: 'Maria',
+            itemId: secondList.items[1].id // For 'Spielzeug'
+        }
+    });
+
+    console.log('✅ Seed data created successfully');
 }
 
 async function clearDatabase() {

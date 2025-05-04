@@ -179,14 +179,14 @@
             </div>
         </div>
     {:else}
-        <!-- Viewing someone else's list (gifter view) - this should never be accessed directly,
-             but we'll include it here for safety. Users should go to the /share route instead. -->
-        <div class="text-center py-12">
-            <p class="text-gray-500">You don't have permission to view this page directly.</p>
-            <a href={`/lists/${page.params.id}/share`}
-               class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                View Shared Wishlist
-            </a>
+        <!-- Gifter view - for non-creators accessing the list -->
+        <div class="mt-6">
+            <ItemList 
+                {items} 
+                isCreatorView={false}
+                on:takeItem={handleTakeItem}
+                on:giftWithMe={handleGiftWithMe}
+            />
         </div>
     {/if}
 </div>

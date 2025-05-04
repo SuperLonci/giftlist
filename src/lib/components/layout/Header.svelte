@@ -1,14 +1,25 @@
 <script lang="ts">
-    import { creatorMode } from '$lib/stores/creatorMode';
     import { invalidate } from '$app/navigation';
+    import { goto } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import type { List } from '@prisma/client';
+    import type { User } from '$lib/server/user';
+    import { toasts } from '$lib/stores/toast';
+
+    export let data: { user: User | null } = { user: null };
 
     let showCreateListModal = false;
     let selectedList: List | null = null;
     let modalMode: 'add' | 'edit' = 'add';
 
     function openCreateListModal() {
+        // Check if user is authenticated
+        if (!data.user) {
+            // Show toast notification if not authenticated
+            toasts.error('Not authorized. Please log in to create a list.', 5000);
+            return;
+        }
+
         modalMode = 'add';
         selectedList = null;
         showCreateListModal = true;
@@ -24,6 +35,26 @@
 
         // Invalidate the app lists data to ensure consistency
         invalidate('app:lists');
+    }
+
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Redirect to home page after successful logout
+                goto('/');
+            } else {
+                console.error('Logout failed');
+            }
+        } catch (error) {
+            console.error('Error during logout:', error);
+        }
     }
 </script>
 
@@ -78,21 +109,14 @@
 
             <!-- Right side: Account settings -->
             <div class="flex items-center">
-                <button
-                    on:click={() => creatorMode.update(value => !value)}
-                    class="px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    {#if $creatorMode}
-                        Creator Mode: ON
-                    {:else}
-                        Creator Mode: OFF
-                    {/if}
-                </button>
-                {#if true}
-                    <button class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
+                {#if data.user}
+                    <a href="/profile"
+                       class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
                         Profile
-                    </button>
-                    <button class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
+                    </a>
+                    <button
+                        on:click={handleLogout}
+                        class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
                         Logout
                     </button>
                 {:else}
@@ -100,7 +124,7 @@
                        class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">
                         Login
                     </a>
-                    <a href="/register"
+                    <a href="/signup"
                        class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 hover:text-indigo-500">
                         Register
                     </a>

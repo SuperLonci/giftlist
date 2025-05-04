@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     const listId = params.id;
-    const userId = locals.userId;
+    const userId = locals.user?.id;
 
     const list = await prisma.list.findUnique({
         where: {

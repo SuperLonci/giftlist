@@ -31,7 +31,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         throw new Error('List not found');
     }
 
-    const isCreator = list.creatorId === locals.user.id;
+    // Handle case where user is not authenticated
+    const isCreator = locals.user ? list.creatorId === locals.user.id : false;
 
     // if (!isCreator) {
     //     throw redirect(302, `/lists/${listId}/share`);

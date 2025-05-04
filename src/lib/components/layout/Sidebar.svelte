@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/state';  // Using $app/state as requested
+    import { page } from '$app/state';
     import { onMount } from 'svelte';
     import { invalidate } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
@@ -7,7 +7,13 @@
     import { toasts } from '$lib/stores/toast';
     import type { User } from '$lib/server/user';
 
-    export let data: { user: User | null } = { user: null };
+    export let data: {
+        user: User | null,
+        sharedLists: { id: string, title: string, creatorName: string, viewedAt: string }[]
+    } = {
+        user: null,
+        sharedLists: []
+    };
 
     let recentLists: List[] = [];
     let showCreateListModal = false;
@@ -16,31 +22,32 @@
     let selectedList: List | null = null;
     let modalMode: 'add' | 'edit' = 'add';
 
+    $: sharedLists = data.sharedLists || [];
+
     async function fetchRecentLists() {
         isLoading = true;
         error = false;
 
-        // If user is not authenticated, set empty list and return
-        if (!data.user) {
-            recentLists = [];
-            isLoading = false;
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/lists?limit=5&sort=updatedAt&order=desc');
-            if (response.ok) {
-                recentLists = await response.json();
-            } else {
-                console.error('Failed to fetch lists:', await response.text());
+        // If user is authenticated, fetch their recent lists
+        if (data.user) {
+            try {
+                const response = await fetch('/api/lists?limit=5&sort=updatedAt&order=desc');
+                if (response.ok) {
+                    recentLists = await response.json();
+                } else {
+                    console.error('Failed to fetch lists:', await response.text());
+                    error = true;
+                }
+            } catch (err) {
+                console.error('Error fetching recent lists:', err);
                 error = true;
             }
-        } catch (err) {
-            console.error('Error fetching recent lists:', err);
-            error = true;
-        } finally {
-            isLoading = false;
+        } else {
+            // If user is not authenticated, set empty list
+            recentLists = [];
         }
+
+        isLoading = false;
     }
 
     onMount(() => {
@@ -95,7 +102,7 @@
                         Retry
                     </button>
                 </div>
-            {:else if recentLists.length === 0}
+            {:else if recentLists.length === 0 && sharedLists.length === 0}
                 <div class="py-2 text-gray-500 text-sm">No lists yet</div>
             {:else}
                 <ul class="space-y-2">
@@ -106,6 +113,17 @@
                                 class="block px-3 py-2 rounded-md text-sm font-medium transition-colors {page.url.pathname.includes(`/lists/${list.id}`) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}"
                             >
                                 {list.title}
+                            </a>
+                        </li>
+                    {/each}
+
+                    {#each sharedLists as list}
+                        <li>
+                            <a
+                                href={`/lists/${list.id}`}
+                                class="block px-3 py-2 rounded-md text-sm font-medium transition-colors {page.url.pathname.includes(`/lists/${list.id}`) ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}"
+                            >
+                                {list.title} <span class="text-xs text-gray-500">(by {list.creatorName})</span>
                             </a>
                         </li>
                     {/each}

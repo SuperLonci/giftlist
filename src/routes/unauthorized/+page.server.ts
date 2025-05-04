@@ -1,7 +1,7 @@
-import type { LayoutServerLoad } from './$types';
+import type { PageServerLoad } from './$types';
 
-export const load: LayoutServerLoad = async ({ locals, cookies }) => {
-    // Get shared lists from cookie for all users (logged in or not)
+export const load: PageServerLoad = async ({ cookies }) => {
+    // Get shared lists from cookie for non-logged-in users
     const sharedListsCookie = cookies.get('shared_lists') || '[]';
     let sharedLists;
     try {
@@ -12,7 +12,6 @@ export const load: LayoutServerLoad = async ({ locals, cookies }) => {
     }
 
     return {
-        user: locals.user,
         sharedLists
     };
 };

@@ -1,6 +1,6 @@
-import type { LayoutServerLoad } from './$types';
+import type { ServerLoad } from '@sveltejs/kit';
 
-export const load: LayoutServerLoad = async ({ locals, cookies }) => {
+export const load: ServerLoad = async ({ locals, cookies }) => {
     // Get shared lists from cookie for all users (logged in or not)
     const sharedListsCookie = cookies.get('shared_lists') || '[]';
     let sharedLists;

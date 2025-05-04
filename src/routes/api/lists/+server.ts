@@ -1,15 +1,14 @@
 import { json } from '@sveltejs/kit';
 import prisma from '$lib/server/prisma';
 import type { RequestHandler } from './$types';
+import { requireAuth } from '$lib/server/auth';
 
-export const GET: RequestHandler = async ({ locals, url }) => {
-    // Get user ID from the authenticated user
-    const userId = locals.user?.id;
-
-    // For testing purposes, if no authenticated user, we can still show public lists
-    // In production, you might want to require authentication
+export const GET: RequestHandler = async (event) => {
+    // Ensure user is authenticated
+    const user = requireAuth(event);
 
     // Parse query parameters
+    const url = event.url;
     const limit = url.searchParams.get('limit')
         ? parseInt(url.searchParams.get('limit') || '10')
         : 10;
@@ -17,20 +16,11 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     const order = url.searchParams.get('order') || 'desc';
 
     try {
-        // Get user for testing (in production, you'd use the authenticated user)
-        const user = await prisma.user.findFirst({
-            where: { name: 'user1' }
-        });
-
-        if (!user) {
-            return json({ message: 'User not found' }, { status: 404 });
-        }
-
-        // Query for lists
+        // Query for lists using the authenticated user's ID
         const lists = await prisma.list.findMany({
-            // where: {
-            //     creatorId: user.id
-            // },
+            where: {
+                creatorId: user.id
+            },
             orderBy: {
                 [sort]: order === 'desc' ? 'desc' : 'asc'
             },
@@ -51,27 +41,23 @@ export const GET: RequestHandler = async ({ locals, url }) => {
     }
 };
 
-export const POST: RequestHandler = async ({ request, locals }) => {
-    // Check if user is authenticated
-    if (!locals.user) {
-        return json({ message: 'Unauthorized' }, { status: 401 });
-    }
+export const POST: RequestHandler = async (event) => {
+    // Ensure user is authenticated
+    const user = requireAuth(event);
 
-    const userId = locals.user.id;
-
-    const { title, description } = await request.json();
+    const { title, description } = await event.request.json();
 
     if (!title) {
         return json({ message: 'Title is required' }, { status: 400 });
     }
 
     try {
-        // Use the authenticated user's ID directly
+        // Use the authenticated user's ID
         const list = await prisma.list.create({
             data: {
                 title,
                 description: description || null,
-                creatorId: userId
+                creatorId: user.id
             }
         });
 

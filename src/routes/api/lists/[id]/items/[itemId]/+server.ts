@@ -1,17 +1,17 @@
 import { json } from '@sveltejs/kit';
 import prisma from '$lib/server/prisma';
 import type { RequestHandler } from './$types';
+import { requireAuth } from '$lib/server/auth';
 
-export const PATCH: RequestHandler = async ({ request, params, locals }) => {
-    const listId = params.id;
-    const itemId = params.itemId;
-    const { name, link, price, currency } = await request.json(); // Item ID aus dem Request-Body
+export const PATCH: RequestHandler = async (event) => {
+    const listId = event.params.id;
+    const itemId = event.params.itemId;
+    const { name, link, price, currency } = await event.request.json();
 
-    if (!locals.user) {
-        return json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    // Ensure user is authenticated
+    const user = requireAuth(event);
 
-    const userId = locals.user.id;
+    const userId = user.id;
 
     // Verify that the list exists and belongs to the user
     const list = await prisma.list.findUnique({
@@ -54,14 +54,13 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
     }
 };
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
-    const itemId = params.itemId;
+export const DELETE: RequestHandler = async (event) => {
+    const itemId = event.params.itemId;
 
-    if (!locals.user) {
-        return json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    // Ensure user is authenticated
+    const user = requireAuth(event);
 
-    const userId = locals.user.id;
+    const userId = user.id;
 
     try {
         await prisma.item.delete({
@@ -70,7 +69,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
         // Update the list's updatedAt field
         await prisma.list.update({
-            where: { id: params.id },
+            where: { id: event.params.id },
             data: {
                 updatedAt: new Date()
             }

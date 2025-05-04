@@ -4,6 +4,10 @@
     import { invalidate } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import type { List } from '@prisma/client';
+    import { toasts } from '$lib/stores/toast';
+    import type { User } from '$lib/server/user';
+
+    export let data: { user: User | null } = { user: null };
 
     let recentLists: List[] = [];
     let showCreateListModal = false;
@@ -15,6 +19,13 @@
     async function fetchRecentLists() {
         isLoading = true;
         error = false;
+
+        // If user is not authenticated, set empty list and return
+        if (!data.user) {
+            recentLists = [];
+            isLoading = false;
+            return;
+        }
 
         try {
             const response = await fetch('/api/lists?limit=5&sort=updatedAt&order=desc');
@@ -52,6 +63,13 @@
     }
 
     function openCreateListModal() {
+        // Check if user is authenticated
+        if (!data.user) {
+            // Show toast notification if not authenticated
+            toasts.error('Not authorized. Please log in to create a list.', 5000);
+            return;
+        }
+
         modalMode = 'add';
         selectedList = null;
         showCreateListModal = true;

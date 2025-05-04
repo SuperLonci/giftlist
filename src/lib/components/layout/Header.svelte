@@ -5,6 +5,7 @@
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import type { List } from '@prisma/client';
     import type { User } from '$lib/server/user';
+    import { toasts } from '$lib/stores/toast';
 
     export let data: { user: User | null } = { user: null };
 
@@ -13,6 +14,13 @@
     let modalMode: 'add' | 'edit' = 'add';
 
     function openCreateListModal() {
+        // Check if user is authenticated
+        if (!data.user) {
+            // Show toast notification if not authenticated
+            toasts.error('Not authorized. Please log in to create a list.', 5000);
+            return;
+        }
+
         modalMode = 'add';
         selectedList = null;
         showCreateListModal = true;

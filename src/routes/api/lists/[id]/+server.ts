@@ -3,10 +3,10 @@ import prisma from '$lib/server/prisma';
 import type { RequestHandler } from './$types';
 
 export const PATCH: RequestHandler = async ({ params, request, locals }) => {
-    const userId = locals.userId;
-    if (!userId) {
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const userId = locals.user.id;
 
     const { title, description } = await request.json();
     if (!title) {
@@ -25,10 +25,10 @@ export const PATCH: RequestHandler = async ({ params, request, locals }) => {
 };
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
-    const userId = locals.userId;
-    if (!userId) {
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const userId = locals.user.id;
 
     try {
         await prisma.list.delete({

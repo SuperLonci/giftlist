@@ -1,4 +1,4 @@
-import { decrypt, decryptToString, encrypt, encryptString } from './encryption';
+import { decryptToString, encryptString } from './encryption';
 import { hashPassword } from './password';
 import { generateRandomRecoveryCode } from './utils';
 import prisma from './prisma';
@@ -46,16 +46,23 @@ export async function updateUserPassword(userId: number, password: string): Prom
 
 export async function updateUserEmailAndSetEmailAsVerified(
     userId: number,
-    email: string
+    email: string,
+    username?: string
 ): Promise<void> {
+    const data: any = {
+        email,
+        emailVerified: true
+    };
+
+    if (username) {
+        data.name = username;
+    }
+
     await prisma.user.update({
         where: {
             id: userId.toString()
         },
-        data: {
-            email,
-            emailVerified: true
-        }
+        data
     });
 }
 

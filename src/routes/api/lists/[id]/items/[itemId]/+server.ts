@@ -5,12 +5,13 @@ import type { RequestHandler } from './$types';
 export const PATCH: RequestHandler = async ({ request, params, locals }) => {
     const listId = params.id;
     const itemId = params.itemId;
-    const userId = locals.userId;
     const { name, link, price, currency } = await request.json(); // Item ID aus dem Request-Body
 
-    if (!userId) {
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = locals.user.id;
 
     // Verify that the list exists and belongs to the user
     const list = await prisma.list.findUnique({
@@ -55,11 +56,12 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
     const itemId = params.itemId;
-    const userId = locals.userId;
 
-    if (!userId) {
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = locals.user.id;
 
     try {
         await prisma.item.delete({

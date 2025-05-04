@@ -4,11 +4,12 @@ import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
     const listId = params.id;
-    const userId = locals.userId;
 
-    if (!userId) {
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = locals.user.id;
 
     // Verify that the list exists and belongs to the user
     const list = await prisma.list.findUnique({

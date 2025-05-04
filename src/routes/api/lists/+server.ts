@@ -3,7 +3,8 @@ import prisma from '$lib/server/prisma';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, url }) => {
-    const userId = locals.userId; // This would come from your auth system
+    // Get user ID from the authenticated user
+    const userId = locals.user?.id;
 
     // For testing purposes, if no authenticated user, we can still show public lists
     // In production, you might want to require authentication
@@ -51,11 +52,12 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-    const userId = locals.userId; // This would come from your auth system
-
-    if (!userId) {
+    // Check if user is authenticated
+    if (!locals.user) {
         return json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = locals.user.id;
 
     const { title, description } = await request.json();
 
@@ -64,19 +66,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     }
 
     try {
-        const userExists = await prisma.user.findFirst({
-            where: { name: 'user1' }
-        });
-
-        if (!userExists) {
-            return json({ message: 'User does not exist' }, { status: 400 });
-        }
-
+        // Use the authenticated user's ID directly
         const list = await prisma.list.create({
             data: {
                 title,
                 description: description || null,
-                creatorId: userExists.id
+                creatorId: userId
             }
         });
 

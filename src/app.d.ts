@@ -4,7 +4,6 @@ declare global {
     namespace App {
         // interface Error {}
         interface Locals {
-            userId: string | null;
             user: User | null;
             session: Session | null;
         }

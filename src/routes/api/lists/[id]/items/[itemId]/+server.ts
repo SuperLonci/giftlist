@@ -11,8 +11,6 @@ export const PATCH: RequestHandler = async (event) => {
     // Ensure user is authenticated
     const user = requireAuth(event);
 
-    const userId = user.id;
-
     // Verify that the list exists and belongs to the user
     const list = await prisma.list.findUnique({
         where: {
@@ -59,8 +57,6 @@ export const DELETE: RequestHandler = async (event) => {
 
     // Ensure user is authenticated
     const user = requireAuth(event);
-
-    const userId = user.id;
 
     try {
         await prisma.item.delete({

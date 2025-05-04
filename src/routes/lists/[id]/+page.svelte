@@ -5,6 +5,7 @@
     import ItemModal from '$lib/components/modals/ItemModal.svelte';
     import type { Item, List } from '@prisma/client';
     import { creatorMode } from '$lib/stores/creatorMode';
+    import { onMount } from 'svelte';
 
     export let data: {
         list: List & {
@@ -20,6 +21,22 @@
     $: list = data.list;
     $: isCreator = data.isCreator;
     $: items = data.list?.items || [];
+
+    // Set creator mode based on whether the user is the creator of the list
+    onMount(() => {
+        creatorMode.set(isCreator);
+
+        // Subscribe to the creatorMode store to ensure it always matches isCreator
+        const unsubscribe = creatorMode.subscribe(value => {
+            // If the value doesn't match isCreator, reset it
+            if (value !== isCreator) {
+                creatorMode.set(isCreator);
+            }
+        });
+
+        // Clean up subscription when component is destroyed
+        return unsubscribe;
+    });
 
     // Modal state management
     let showNameModal = false;

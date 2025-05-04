@@ -22,21 +22,19 @@ export async function createUser(email: string, username: string, password: stri
         }
     });
 
-    const user: User = {
+    return {
         id: createdUser.id,
         username,
         email,
         emailVerified: false
     };
-
-    return user;
 }
 
-export async function updateUserPassword(userId: number, password: string): Promise<void> {
+export async function updateUserPassword(userId: string, password: string): Promise<void> {
     const passwordHash = await hashPassword(password);
     await prisma.user.update({
         where: {
-            id: userId.toString()
+            id: userId
         },
         data: {
             password: passwordHash
@@ -45,7 +43,7 @@ export async function updateUserPassword(userId: number, password: string): Prom
 }
 
 export async function updateUserEmailAndSetEmailAsVerified(
-    userId: number,
+    userId: string,
     email: string,
     username?: string
 ): Promise<void> {
@@ -60,20 +58,20 @@ export async function updateUserEmailAndSetEmailAsVerified(
 
     await prisma.user.update({
         where: {
-            id: userId.toString()
+            id: userId
         },
         data
     });
 }
 
 export async function setUserAsEmailVerifiedIfEmailMatches(
-    userId: number,
+    userId: string,
     email: string
 ): Promise<boolean> {
     try {
         const result = await prisma.user.updateMany({
             where: {
-                id: userId.toString(),
+                id: userId,
                 email
             },
             data: {
@@ -103,10 +101,10 @@ export async function getUserPasswordHash(userId: string): Promise<string> {
     return user.password;
 }
 
-export async function getUserRecoverCode(userId: number): Promise<string> {
+export async function getUserRecoverCode(userId: string): Promise<string> {
     const user = await prisma.user.findUnique({
         where: {
-            id: userId.toString()
+            id: userId
         },
         select: {
             recovery_code: true
@@ -120,13 +118,13 @@ export async function getUserRecoverCode(userId: number): Promise<string> {
     return decryptToString(user.recovery_code);
 }
 
-export async function resetUserRecoveryCode(userId: number): Promise<string> {
+export async function resetUserRecoveryCode(userId: string): Promise<string> {
     const recoveryCode = generateRandomRecoveryCode();
     const encrypted = encryptString(recoveryCode);
 
     await prisma.user.update({
         where: {
-            id: userId.toString()
+            id: userId
         },
         data: {
             recovery_code: encrypted

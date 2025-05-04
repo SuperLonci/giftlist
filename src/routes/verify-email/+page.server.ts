@@ -8,16 +8,39 @@ import {
     sendVerificationEmailBucket,
     setEmailVerificationRequestCookie
 } from '$lib/server/email-verification';
-import { invalidateUserPasswordResetSessions } from '$lib/server/password-reset';
+import {
+    invalidateUserPasswordResetSessions,
+    validatePasswordResetSessionRequest,
+    setPasswordResetSessionAsEmailVerified,
+    sendPasswordResetEmail
+} from '$lib/server/password-reset';
 import { updateUserEmailAndSetEmailAsVerified } from '$lib/server/user';
 import { ExpiringTokenBucket } from '$lib/server/rate-limit';
 
 import type { Actions, RequestEvent } from './$types';
 
 export async function load(event: RequestEvent) {
+    // First, check if this is a password reset verification
+    const { session: passwordResetSession, user: passwordResetUser } =
+        await validatePasswordResetSessionRequest(event);
+
+    if (passwordResetSession !== null && passwordResetUser !== null) {
+        // This is a password reset verification
+        if (passwordResetSession.emailVerified) {
+            return redirect(302, '/reset-password');
+        }
+
+        return {
+            email: passwordResetSession.email,
+            isPasswordReset: true
+        };
+    }
+
+    // If not a password reset, handle as regular email verification
     if (event.locals.user === null) {
         return redirect(302, '/login');
     }
+
     let verificationRequest = await getUserEmailVerificationRequestFromRequest(event);
     if (verificationRequest === null || Date.now() >= verificationRequest.expiresAt.getTime()) {
         if (event.locals.user.emailVerified) {
@@ -31,12 +54,14 @@ export async function load(event: RequestEvent) {
         sendVerificationEmail(verificationRequest.email, verificationRequest.code);
         setEmailVerificationRequestCookie(event, verificationRequest);
     }
+
     return {
-        email: verificationRequest.email
+        email: verificationRequest.email,
+        isPasswordReset: false
     };
 }
 
-const bucket = new ExpiringTokenBucket<number>(5, 60 * 30);
+const bucket = new ExpiringTokenBucket<string>(5, 60 * 30);
 
 export const actions: Actions = {
     verify: verifyCode,
@@ -44,6 +69,59 @@ export const actions: Actions = {
 };
 
 async function verifyCode(event: RequestEvent) {
+    // First, check if this is a password reset verification
+    const { session: passwordResetSession, user: passwordResetUser } =
+        await validatePasswordResetSessionRequest(event);
+
+    if (passwordResetSession !== null && passwordResetUser !== null) {
+        // This is a password reset verification
+        if (!bucket.check(passwordResetSession.id, 1)) {
+            return fail(429, {
+                verify: {
+                    message: 'Too many requests'
+                }
+            });
+        }
+
+        const formData = await event.request.formData();
+        const code = formData.get('code');
+        if (typeof code !== 'string') {
+            return fail(400, {
+                verify: {
+                    message: 'Invalid or missing fields'
+                }
+            });
+        }
+
+        if (code === '') {
+            return fail(400, {
+                verify: {
+                    message: 'Enter your code'
+                }
+            });
+        }
+
+        if (!bucket.consume(passwordResetSession.id, 1)) {
+            return fail(429, {
+                verify: {
+                    message: 'Too many requests'
+                }
+            });
+        }
+
+        if (passwordResetSession.code !== code) {
+            return fail(400, {
+                verify: {
+                    message: 'Incorrect code'
+                }
+            });
+        }
+
+        await setPasswordResetSessionAsEmailVerified(passwordResetSession.id);
+        return redirect(302, '/reset-password');
+    }
+
+    // If not a password reset, handle as regular email verification
     if (event.locals.session === null || event.locals.user === null) {
         return fail(401, {
             verify: {
@@ -117,6 +195,38 @@ async function verifyCode(event: RequestEvent) {
 }
 
 async function resendEmail(event: RequestEvent) {
+    // First, check if this is a password-reset-verification
+    const { session: passwordResetSession, user: passwordResetUser } =
+        await validatePasswordResetSessionRequest(event);
+
+    if (passwordResetSession !== null && passwordResetUser !== null) {
+        // This is a password-reset-verification
+        if (!bucket.check(passwordResetSession.id, 1)) {
+            return fail(429, {
+                resend: {
+                    message: 'Too many requests'
+                }
+            });
+        }
+
+        if (!bucket.consume(passwordResetSession.id, 1)) {
+            return fail(429, {
+                resend: {
+                    message: 'Too many requests'
+                }
+            });
+        }
+
+        sendPasswordResetEmail(passwordResetSession.email, passwordResetSession.code);
+
+        return {
+            resend: {
+                message: 'A new code was sent to your inbox.'
+            }
+        };
+    }
+
+    // If not a password reset, handle as regular email verification
     if (event.locals.session === null || event.locals.user === null) {
         return fail(401, {
             resend: {

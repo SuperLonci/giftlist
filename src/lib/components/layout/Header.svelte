@@ -1,6 +1,5 @@
 <script lang="ts">
     import { invalidate } from '$app/navigation';
-    import { goto } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
     import type { List } from '@prisma/client';
     import type { User } from '$lib/server/user';
@@ -47,8 +46,9 @@
             });
 
             if (response.ok) {
-                // Redirect to home page after successful logout
-                goto('/');
+                // Redirect to home page after successful logout and force a full page reload
+                // This ensures that the layout data is refreshed and the header shows the correct state
+                window.location.href = '/';
             } else {
                 console.error('Logout failed');
             }

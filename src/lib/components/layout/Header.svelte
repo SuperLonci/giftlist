@@ -1,5 +1,4 @@
 <script lang="ts">
-    import { creatorMode } from '$lib/stores/creatorMode';
     import { invalidate } from '$app/navigation';
     import { goto } from '$app/navigation';
     import ListModal from '$lib/components/modals/ListModal.svelte';
@@ -110,16 +109,6 @@
 
             <!-- Right side: Account settings -->
             <div class="flex items-center">
-                <button
-                    on:click={() => creatorMode.update(value => !value)}
-                    class="px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    {#if $creatorMode}
-                        Creator Mode: ON
-                    {:else}
-                        Creator Mode: OFF
-                    {/if}
-                </button>
                 {#if data.user}
                     <a href="/profile"
                        class="ml-4 px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-gray-700">

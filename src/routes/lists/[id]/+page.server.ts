@@ -3,7 +3,6 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
     const listId = params.id;
-    const userId = locals.userId;
 
     // if (!userId) {
     //     throw redirect(302, `/lists/${listId}/share`);
@@ -32,7 +31,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
         throw new Error('List not found');
     }
 
-    const isCreator = list.creatorId === userId;
+    const isCreator = list.creatorId === locals.user.id;
 
     // if (!isCreator) {
     //     throw redirect(302, `/lists/${listId}/share`);

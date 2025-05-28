@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  giftlist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "4015:4015"
+    environment:
+      - DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@db:3306/giftlist
+      - SHADOW_DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@db:3306/giftlist_shadow
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - PORT=4015
+    depends_on:
+      - db
+    volumes:
+      - ./.env:/app/.env
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        npx wait-on tcp:db:3306 -t 60000 &&
+        npx prisma migrate deploy &&
+        npx prisma db seed &&
+        node build"
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=giftlist
+      - MYSQL_USER=giftlist_user
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+
+volumes:
+  mysql_data:

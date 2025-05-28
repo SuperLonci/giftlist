@@ -39,3 +39,15 @@ A SvelteKit application for creating and sharing wishlists with friends and fami
 - TypeScript
 - Prisma
 - Tailwind CSS
+
+## Deployment
+
+For detailed instructions on how to deploy this application to an Ubuntu web server using Docker Compose, please refer to the [Deployment Guide](DEPLOYMENT.md).
+
+The deployment guide includes:
+- Setting up Docker and Docker Compose
+- Configuring the MySQL database and shadow database for Prisma
+- Automating the build and deployment process
+- Maintenance and troubleshooting tips
+
+A deployment script (`deploy.sh`) is also provided for easy setup.

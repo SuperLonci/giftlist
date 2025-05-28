@@ -6,31 +6,32 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
-  id                      String                    @id @default(uuid())
-  email                   String                    @unique
-  password                String
-  name                    String
-  lists                   List[]
-  defaultCurrency         String                    @default("EUR")
-  sessions                Session[]
-  emailVerified           Boolean                   @default(false)
-  recovery_code           Bytes?
+  id                        String                     @id @default(uuid())
+  email                     String                     @unique
+  password                  String
+  name                      String
+  lists                     List[]
+  defaultCurrency           String                     @default("EUR")
+  sessions                  Session[]
+  emailVerified             Boolean                    @default(false)
+  recovery_code             Bytes?
   emailVerificationRequests EmailVerificationRequest[]
-  passwordResetSessions   PasswordResetSession[]
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt
+  passwordResetSessions     PasswordResetSession[]
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
 }
 
 model Session {
-  id               String   @id
-  userId           String
-  expiresAt        DateTime
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model List {
@@ -89,11 +90,11 @@ model EmailVerificationRequest {
 }
 
 model PasswordResetSession {
-  id               String   @id
-  userId           String
-  email            String
-  code             String
-  expiresAt        DateTime
-  emailVerified    Boolean  @default(false)
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id
+  userId        String
+  email         String
+  code          String
+  expiresAt     DateTime
+  emailVerified Boolean  @default(false)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

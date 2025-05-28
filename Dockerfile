@@ -41,6 +41,6 @@ RUN chown -R sveltekit:nodejs /app
 # Switch to non-root user
 USER sveltekit
 
-EXPOSE 3000
+EXPOSE 4015
 
 CMD ["node", "build"]

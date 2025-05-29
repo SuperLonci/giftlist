@@ -50,4 +50,21 @@ const authHandle: Handle = async ({ event, resolve }) => {
     return resolve(event);
 };
 
-export const handle = sequence(rateLimitHandle, authHandle);
+const trustedOrigins = new Set(
+    [
+        process.env.TRUSTED_ORIGIN && process.env.TRUSTED_ORIGIN.trim(),
+        'http://localhost:4015' // Dev
+    ].filter(Boolean)
+);
+
+const originCheckHandle: Handle = async ({ event, resolve }) => {
+    const origin = event.request.headers.get('origin');
+    if (event.request.method === 'POST' && origin && !trustedOrigins.has(origin)) {
+        return new Response('Cross-site POST form submissions are forbidden', {
+            status: 403
+        });
+    }
+    return resolve(event);
+};
+
+export const handle = sequence(rateLimitHandle, originCheckHandle, authHandle);

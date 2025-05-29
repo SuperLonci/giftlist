@@ -47,10 +47,6 @@ A SvelteKit application for creating and sharing wishlists with friends and fami
 This application uses SvelteKit's built-in CSRF (Cross-Site Request Forgery) protection. For development:
 
 - The default configuration allows requests from `http://localhost:4015`
-- If you're accessing the dev server from a different origin, update the `allowedOrigins` array in `svelte.config.js`
-
-For production deployment, set the `PUBLIC_ORIGIN` environment variable to the URL where users access your application.
-See the [Deployment Guide](DEPLOYMENT.md) for more details.
 
 ## Deployment
 

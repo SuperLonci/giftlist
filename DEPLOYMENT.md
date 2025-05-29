@@ -65,16 +65,10 @@ ENCRYPTION_KEY=generate_a_new_one
 # MySQL passwords
 MYSQL_ROOT_PASSWORD=generate_a_new_one
 MYSQL_PASSWORD=generate_a_new_one
-
-# Public origin for CSRF protection (important for security)
-# This should be the full URL where users access your application
-PUBLIC_ORIGIN=http://your-server-domain-or-ip:4015
 EOL
 ```
 
 > **Note:** For production, you should generate new secure passwords and encryption key.
-> **Important:** The `PUBLIC_ORIGIN` variable must match exactly how users access your application (including protocol,
-> domain, and port). This is critical for CSRF protection to work correctly.
 
 ## 4. Deploy with Docker Compose
 
@@ -129,22 +123,6 @@ chmod +x deploy.sh
 
 You can then run `./deploy.sh` to update and redeploy the application.
 
-## Security Considerations
-
-### CSRF Protection
-
-The application uses SvelteKit's built-in CSRF (Cross-Site Request Forgery) protection. This security feature prevents
-malicious websites from making unauthorized requests to your application on behalf of authenticated users.
-
-For CSRF protection to work correctly:
-
-1. The `PUBLIC_ORIGIN` environment variable must be set to the exact URL where users access your application
-2. If your application is accessed through multiple domains or protocols, add all of them to the `allowedOrigins` array
-   in `svelte.config.js`
-
-**Important:** Never completely disable CSRF protection in production by setting `checkOrigin: false` as this would make
-your application vulnerable to CSRF attacks.
-
 ## Troubleshooting
 
 ### Database Connection Issues
@@ -174,20 +152,6 @@ docker-compose logs app
 # Access the application container
 docker-compose exec app sh
 ```
-
-### CSRF Protection Issues
-
-If you encounter "Cross-site POST form submissions are forbidden" errors:
-
-1. Verify that the `PUBLIC_ORIGIN` environment variable is set correctly in your `.env` file
-2. Ensure the value matches exactly how users access your application (including protocol, domain, and port)
-3. If users access your application through multiple domains, add all of them to the `allowedOrigins` array in
-   `svelte.config.js`
-4. Check the application logs for any CSRF-related errors:
-   ```bash
-   docker-compose logs app | grep -i csrf
-   ```
-5. If you're behind a reverse proxy (like Nginx or Apache), ensure it's properly configured to pass the correct headers
 
 ## Maintenance
 

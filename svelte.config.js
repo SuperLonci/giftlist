@@ -11,18 +11,7 @@ const config = {
         // adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
         // If your environment is not supported, or you settled on a specific environment, switch out the adapter.
         // See https://svelte.dev/docs/kit/adapters for more information about adapters.
-        adapter: adapter(),
-
-        // Configure CSRF protection with allowed origins
-        csrf: {
-            checkOrigin: true,
-            allowedOrigins: [
-                // Add your production domain(s) here
-                // Example: 'https://yourdomain.com'
-                // You can also use environment variables for different environments
-                process.env.PUBLIC_ORIGIN || 'http://localhost:4015'
-            ]
-        }
+        adapter: adapter()
     }
 };
 

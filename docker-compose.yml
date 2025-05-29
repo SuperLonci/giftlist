@@ -15,7 +15,7 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-define_your_key}
       - PORT=4015
       - NODE_ENV=production
-      - PUBLIC_ORIGIN=your-domain.de
+      - PUBLIC_ORIGIN=http://localhost:4015
     depends_on:
       mysql:
         condition: service_healthy

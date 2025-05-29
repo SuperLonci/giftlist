@@ -96,9 +96,8 @@ async function action(event: RequestEvent) {
         setSessionTokenCookie(event, sessionToken, session.expiresAt);
 
         if (!user.emailVerified) {
-            return redirect(302, '/verify-email');
+            return redirect(303, '/verify-email');
         }
-        return redirect(302, '/');
     } catch (error) {
         console.error('Login error:', error);
         return fail(500, {
@@ -106,4 +105,5 @@ async function action(event: RequestEvent) {
             email
         });
     }
+    return redirect(303, '/');
 }

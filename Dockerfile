@@ -39,9 +39,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create a non-root user with specific UID/GID
+# Create a non-root user with proper home directory
 RUN groupadd --system --gid 1001 nodejs && \
-    useradd --system --uid 1001 --gid nodejs sveltekit
+    useradd --system --uid 1001 --gid nodejs --create-home sveltekit
 
 # Copy built application
 COPY --from=builder --chown=sveltekit:nodejs /app/build ./build

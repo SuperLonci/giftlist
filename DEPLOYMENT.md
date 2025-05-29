@@ -94,7 +94,7 @@ The application will:
 Once deployed, the application will be available at:
 
 ```
-http://your-server-ip:3000
+http://your-server-ip:4015
 ```
 
 ## 7. Deployment Script (Optional)

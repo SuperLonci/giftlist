@@ -4,6 +4,8 @@ FROM node:20-slim AS base
 FROM base AS deps
 WORKDIR /app
 
+RUN apt-get update -y && apt-get install -y openssl
+
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json ./
 RUN npm ci

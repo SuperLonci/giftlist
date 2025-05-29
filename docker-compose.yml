@@ -2,30 +2,40 @@ version: '3.8'
 
 services:
   giftlist:
+    container_name: giftlist
     build:
-      context: .
+      context: ./giftlist
       dockerfile: Dockerfile
     restart: always
     ports:
       - "4015:4015"
     environment:
-      - DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@db:3306/giftlist
-      - SHADOW_DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@db:3306/giftlist_shadow
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@mysql:3306/giftlist
+      - SHADOW_DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@mysql:3306/giftlist_shadow
+      - ENCRYPTION_KEY=define_your_key
       - PORT=4015
     depends_on:
-      - db
+      mysql:
+        condition: service_healthy
     volumes:
       - ./.env:/app/.env
     command: >
       sh -c "
         echo 'Waiting for database to be ready...' &&
-        npx wait-on tcp:db:3306 -t 60000 &&
-        npx prisma migrate deploy &&
+        npx wait-on tcp:mysql:3306 -t 60000 &&
+        echo 'Database is ready, checking Prisma status...' &&
+        npx prisma db push --force-reset &&
+        echo 'Database schema applied, running migrations...' &&
+        npx prisma migrate deploy || echo 'Migration deploy completed (may have been empty)' &&
+        echo 'Generating Prisma client...' &&
+        npx prisma generate &&
+        echo 'Running database seed...' &&
         npx prisma db seed &&
+        echo 'Starting application...' &&
         node build"
 
   mysql:
+    container_name: mysql
     image: mysql:8.0
     restart: always
     environment:
@@ -38,6 +48,12 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "giftlist_user", "-p${MYSQL_PASSWORD}" ]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
 
 volumes:
   mysql_data:

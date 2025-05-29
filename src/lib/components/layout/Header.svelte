@@ -47,7 +47,7 @@
 
             if (response.ok) {
                 // Redirect to home page after successful logout and force a full page reload
-                // This ensures that the layout data is refreshed and the header shows the correct state
+                // This ensures that the layout data is refreshed, and the header shows the correct state
                 window.location.href = '/';
             } else {
                 console.error('Logout failed');

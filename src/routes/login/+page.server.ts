@@ -24,9 +24,15 @@ export const actions: Actions = {
 };
 
 async function action(event: RequestEvent) {
-    // TODO: Assumes X-Forwarded-For is always included.
-    const clientIP = event.request.headers.get('X-Forwarded-For');
-    if (clientIP !== null && !ipBucket.check(clientIP, 1)) {
+    // Get client IP from various headers or fallback to a default value
+    const clientIP =
+        event.request.headers.get('X-Forwarded-For') ||
+        event.request.headers.get('CF-Connecting-IP') ||
+        event.getClientAddress() ||
+        'unknown-ip';
+
+    // Only apply rate limiting if we have a valid client IP
+    if (clientIP !== 'unknown-ip' && !ipBucket.check(clientIP, 1)) {
         return fail(429, {
             message: 'Too many requests',
             email: ''
@@ -54,40 +60,50 @@ async function action(event: RequestEvent) {
             email
         });
     }
-    const user = await getUserFromEmail(email);
-    if (user === null) {
-        return fail(400, {
-            message: 'Account does not exist',
-            email
-        });
-    }
-    if (clientIP !== null && !ipBucket.consume(clientIP, 1)) {
-        return fail(429, {
-            message: 'Too many requests',
-            email: ''
-        });
-    }
-    if (!throttler.consume(user.id)) {
-        return fail(429, {
-            message: 'Too many requests',
-            email: ''
-        });
-    }
-    const passwordHash = await getUserPasswordHash(user.id);
-    const validPassword = await verifyPasswordHash(passwordHash, password);
-    if (!validPassword) {
-        return fail(400, {
-            message: 'Invalid password',
-            email
-        });
-    }
-    throttler.reset(user.id);
-    const sessionToken = generateSessionToken();
-    const session = await createSession(sessionToken, user.id);
-    setSessionTokenCookie(event, sessionToken, session.expiresAt);
+    try {
+        const user = await getUserFromEmail(email);
+        if (user === null) {
+            return fail(400, {
+                message: 'Account does not exist',
+                email
+            });
+        }
+        if (clientIP !== 'unknown-ip' && !ipBucket.consume(clientIP, 1)) {
+            return fail(429, {
+                message: 'Too many requests',
+                email: ''
+            });
+        }
+        if (!throttler.consume(user.id)) {
+            return fail(429, {
+                message: 'Too many requests',
+                email: ''
+            });
+        }
 
-    if (!user.emailVerified) {
-        return redirect(302, '/verify-email');
+        const passwordHash = await getUserPasswordHash(user.id);
+        const validPassword = await verifyPasswordHash(passwordHash, password);
+        if (!validPassword) {
+            return fail(400, {
+                message: 'Invalid password',
+                email
+            });
+        }
+
+        throttler.reset(user.id);
+        const sessionToken = generateSessionToken();
+        const session = await createSession(sessionToken, user.id);
+        setSessionTokenCookie(event, sessionToken, session.expiresAt);
+
+        if (!user.emailVerified) {
+            return redirect(302, '/verify-email');
+        }
+        return redirect(302, '/');
+    } catch (error) {
+        console.error('Login error:', error);
+        return fail(500, {
+            message: 'An error occurred during login. Please try again later.',
+            email
+        });
     }
-    return redirect(302, '/');
 }

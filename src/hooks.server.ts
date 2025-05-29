@@ -11,22 +11,27 @@ import type { Handle } from '@sveltejs/kit';
 const bucket = new RefillingTokenBucket<string>(100, 1);
 
 const rateLimitHandle: Handle = async ({ event, resolve }) => {
-    // Note: Assumes X-Forwarded-For will always be defined.
-    const clientIP = event.request.headers.get('X-Forwarded-For');
-    if (clientIP === null) {
-        return resolve(event);
-    }
+    // Get client IP from X-Forwarded-For or fallback to a default value
+    const clientIP =
+        event.request.headers.get('X-Forwarded-For') ||
+        event.request.headers.get('CF-Connecting-IP') ||
+        event.getClientAddress() ||
+        'unknown-ip';
+
     let cost: number;
     if (event.request.method === 'GET' || event.request.method === 'OPTIONS') {
         cost = 1;
     } else {
         cost = 3;
     }
-    if (!bucket.consume(clientIP, cost)) {
+
+    // Only apply rate limiting if we have a valid client IP
+    if (clientIP !== 'unknown-ip' && !bucket.consume(clientIP, cost)) {
         return new Response('Too many requests', {
             status: 429
         });
     }
+
     return resolve(event);
 };
 
@@ -38,22 +43,32 @@ const authHandle: Handle = async ({ event, resolve }) => {
         return resolve(event);
     }
 
-    const { session, user } = await validateSessionToken(token);
-    if (session !== null) {
-        setSessionTokenCookie(event, token, session.expiresAt);
-    } else {
+    try {
+        const { session, user } = await validateSessionToken(token);
+        if (session !== null) {
+            setSessionTokenCookie(event, token, session.expiresAt);
+        } else {
+            deleteSessionTokenCookie(event);
+        }
+
+        event.locals.session = session;
+        event.locals.user = user;
+    } catch (error) {
+        console.error('Session validation error:', error);
+        // If session validation fails, clear the session
         deleteSessionTokenCookie(event);
+        event.locals.session = null;
+        event.locals.user = null;
     }
 
-    event.locals.session = session;
-    event.locals.user = user;
     return resolve(event);
 };
 
 const trustedOrigins = new Set(
     [
         process.env.TRUSTED_ORIGIN && process.env.TRUSTED_ORIGIN.trim(),
-        'http://localhost:4015' // Dev
+        'http://localhost:5173', // Dev
+        'http://localhost:4015'
     ].filter(Boolean)
 );
 

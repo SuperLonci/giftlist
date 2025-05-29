@@ -12,7 +12,7 @@ services:
     environment:
       - DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@mysql:3306/giftlist
       - SHADOW_DATABASE_URL=mysql://giftlist_user:${MYSQL_PASSWORD}@mysql:3306/giftlist_shadow
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-define_your_key}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-12345678901234567890123456789012}
       - PORT=4015
       - NODE_ENV=production
       - PUBLIC_ORIGIN=http://localhost:4015

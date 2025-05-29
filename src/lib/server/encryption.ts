@@ -6,6 +6,14 @@ import { ENCRYPTION_KEY } from '$env/static/private';
 
 const key = decodeBase64(ENCRYPTION_KEY);
 
+if (key.byteLength !== 16) {
+    throw new Error(
+        `Invalid encryption key length: ${key.byteLength} bytes. ` +
+            `AES-128-GCM requires exactly 16 bytes. ` +
+            `Current base64 string decodes to ${key}.`
+    );
+}
+
 export function encrypt(data: Uint8Array): Uint8Array {
     const iv = new Uint8Array(16);
     crypto.getRandomValues(iv);

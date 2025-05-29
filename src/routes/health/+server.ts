@@ -1,0 +1,30 @@
+import { json } from '@sveltejs/kit';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export async function GET() {
+    try {
+        // Test database connection
+        await prisma.$queryRaw`SELECT 1`;
+
+        return json({
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            database: 'connected',
+            uptime: process.uptime()
+        });
+    } catch (error) {
+        console.error('Health check failed:', error);
+
+        return json(
+            {
+                status: 'unhealthy',
+                timestamp: new Date().toISOString(),
+                database: 'disconnected',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            },
+            { status: 503 }
+        );
+    }
+}

@@ -24,7 +24,7 @@ export const actions: Actions = {
 };
 
 async function action(event: RequestEvent) {
-    // Get client IP from various headers or fallback to a default value
+    // Get client IP from various headers or fall-back to a default value
     const clientIP =
         event.request.headers.get('X-Forwarded-For') ||
         event.request.headers.get('CF-Connecting-IP') ||

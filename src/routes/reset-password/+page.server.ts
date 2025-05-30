@@ -6,7 +6,7 @@ import {
 } from '$lib/server/password-reset';
 import { updateUserPassword } from '$lib/server/user';
 
-import type { Actions, RequestEvent } from '../../../.svelte-kit/types/src/routes';
+import type { Actions, RequestEvent } from './$types';
 
 export async function load(event: RequestEvent) {
     const { session, user } = await validatePasswordResetSessionRequest(event);

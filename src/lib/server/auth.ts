@@ -8,19 +8,19 @@ import { redirect, error } from '@sveltejs/kit';
  * @returns The authenticated user or throws an error/redirect
  */
 export function requireAuth(event: RequestEvent, redirectTo?: string) {
-  const user = event.locals.user;
-  
-  if (!user) {
-    if (redirectTo) {
-      // For page routes, redirect to login
-      throw redirect(302, redirectTo);
-    } else {
-      // For API routes, return 401 Unauthorized
-      throw error(401, 'Unauthorized');
+    const user = event.locals.user;
+
+    if (!user) {
+        if (redirectTo) {
+            // For page routes, redirect to the login page
+            throw redirect(302, redirectTo);
+        } else {
+            // For API routes, return 401 Unauthorized
+            throw error(401, 'Unauthorized');
+        }
     }
-  }
-  
-  return user;
+
+    return user;
 }
 
 /**
@@ -29,5 +29,5 @@ export function requireAuth(event: RequestEvent, redirectTo?: string) {
  * @returns Boolean indicating if user is authenticated
  */
 export function isAuthenticated(event: RequestEvent): boolean {
-  return !!event.locals.user;
+    return !!event.locals.user;
 }

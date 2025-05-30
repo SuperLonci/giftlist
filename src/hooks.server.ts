@@ -11,7 +11,7 @@ import type { Handle } from '@sveltejs/kit';
 const bucket = new RefillingTokenBucket<string>(100, 1);
 
 const rateLimitHandle: Handle = async ({ event, resolve }) => {
-    // Get client IP from X-Forwarded-For or fallback to a default value
+    // Get client IP from X-Forwarded-For or fall-back to a default value
     const clientIP =
         event.request.headers.get('X-Forwarded-For') ||
         event.request.headers.get('CF-Connecting-IP') ||

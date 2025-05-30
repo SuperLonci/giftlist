@@ -48,7 +48,7 @@ newgrp docker
 
 ```bash
 # Clone the repository
-git clone https://github.com/superlonci/giftlist
+git clone --branch deploy  --single-branch https://github.com/superlonci/giftlist
 cd giftlist
 ```
 
